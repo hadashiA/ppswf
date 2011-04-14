@@ -1,22 +1,21 @@
 import struct
 
-def _lefmt(bytes_length):
+def __fmt(bytes_length):
     if bytes_length == 2:
-        return '<H'
+        return 'H'
     elif bytes_length == 4:
-        return '<L'
+        return 'L'
     else:
         raise ValueError
 
 def bytes2le(bytes):
     "byte string to LittleEndian"
-    fmt = _lefmt(len(bytes))
-    return struct.unpack(fmt, bytes)[0]
+    return struct.unpack('<' + __fmt(len(bytes)), bytes)[0]
 
 def le2bytes(i, length=4):
-    "Little Endian to n Byte"
-    fmt = _lefmt(length)
-    return struct.pack(fmt, i)
+    "Little Endian to n bytes"
+    return struct.pack('<' + __fmt(len(bytes)), i)
 
-def bytes2be(i, length=2):
-    return 1
+def bytes2be(bytes):
+    "byte string to BigEndian"
+    return struct.unpack('>' + __fmt(len(bytes)), bytes)[0]

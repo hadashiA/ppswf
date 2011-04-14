@@ -1,64 +1,67 @@
 from cStringIO import StringIO
 
-from utils import le2bytes, bytes2le
+from utils import le2bytes, bytes2le, bytes2be
 
 class JPEGParseError(Exception):
     """Raised when fairue jpeg binary parse"""
     
 class JPEG:
-    def INVALID(io):
-        raise JPEGParseError, 'invalid marker2'
-
-    def SOI(io):
+    def PERIOD(io):
         return {
             'data': None,
             'lengh': None,
             }
 
-    def EOI(io):
-        return {
-            'data': None,
-            'length': None,
-            }
-
-    def SOS(io):
+    def PASS(io):
         return None
 
-    def RST0(io):
-        return None
-    RST1 = RST2 = RST3 = RST0
-
-    def RST4(io):
-        # dynamic chunk marker
-        return None
-    RST5 = RST6 = RST7 = RST4
+    def RST(io):
+        while True:
+            next_marker1 = io.read(1)
+            if next_marker1 != 0xff:
+                continue
+            
+            next_marker2 = io.read(1)
+            if next_marker2 == 0x00:
+                continue
 
     def DEFAULT(io):
-        length = io.read()
+        length = bytes2be(io.read(2))
+        return {
+            'data': io.read(length - 2),
+            'length': length,
+            }
 
-    marker_func_table = {
-        0xD8: SOI,
-        0xE0: 'APP0',  0xE1: 'APP1',  0xE2: 'APP2',  0xE3: 'APP3',
-        0xE4: 'APP4',  0xE5: 'APP5',  0xE6: 'APP6',  0xE7: 'APP7',
-        0xE8: 'APP8',  0xE9: 'APP9',  0xEA: 'APP10', 0xEB: 'APP11',
-        0xEC: 'APP12', 0xED: 'APP13', 0xEE: 'APP14', 0xEF: 'APP15',
-        0xFE: 'COM',
-        0xDB: 'DQT',
-        0xC0: 'SOF0', 0xC1: 'SOF1',  0xC2: 'SOF2',  0xC3: 'SOF3',
-        0xC5: 'SOF5', 0xC6: 'SOF6',  0xC7: 'SOF7',
-        0xC8: 'JPG',  0xC9: 'SOF9',  0xCA: 'SOF10', 0xCB: 'SOF11',
-        0xCC: 'DAC',  0xCD: 'SOF13', 0xCE: 'SOF14', 0xCF: 'SOF15',
-        0xC4: 'DHT',
-        0xDA: SOS,
-        0xD0: RST0, 0xD1: RST1, 0xD2: RST2, 0xD3: RST3,
-        0xD4: RST4, 0xD5: RST5, 0xD6: RST6, 0xD7: RST7,
-        0xDD: 'DRI',
-        0xD9: EOI,
-        0xDC: 'DNL',   0xDE: 'DHP',  0xDF: 'EXP',
-        0xF0: 'JPG0',  0xF1: 'JPG1', 0xF2: 'JPG2',  0xF3: 'JPG3',
-        0xF4: 'JPG4',  0xF5: 'JPG5', 0xF6: 'JPG6',  0xF7: 'JPG7',
-        0xF8: 'JPG8',  0xF9: 'JPG9', 0xFA: 'JPG10', 0xFB: 'JPG11',
-        0xFC: 'JPG12', 0xFD: 'JPG13',
+    names = {
+        0xd8: 'SOI',
+        0xe0: 'APP0',  0xe1: 'APP1',  0xe2: 'APP2',  0xe3: 'APP3',
+        0xe4: 'APP4',  0xe5: 'APP5',  0xe6: 'APP6',  0xe7: 'APP7',
+        0xe8: 'APP8',  0xe9: 'APP9',  0xea: 'APP10', 0xeb: 'APP11',
+        0xeC: 'APP12', 0xeD: 'APP13', 0xee: 'APP14', 0xef: 'APP15',
+        0xfe: 'COM',
+        0xdB: 'DQT',
+        0xc0: 'SOF0', 0xc1: 'SOF1',  0xc2: 'SOF2',  0xC3: 'SOF3',
+        0xc5: 'SOF5', 0xc6: 'SOF6',  0xc7: 'SOF7',
+        0xc8: 'JPG',  0xc9: 'SOF9',  0xca: 'SOF10', 0xcb: 'SOF11',
+        0xcc: 'DAC',  0xcd: 'SOF13', 0xce: 'SOF14', 0xcf: 'SOF15',
+        0xc4: 'DHT',
+        0xdA: 'SOS',
+        0xd0: 'RST0', 0xd1: 'RST1', 0xd2: 'RST2', 0xd3: 'RST3',
+        0xd4: 'RST4', 0xd5: 'RST5', 0xd6: 'RST6', 0xd7: 'RST7',
+        0xdd: 'DRI',
+        0xd9: 'EOI',
+        0xdc: 'DNL',   0xde: 'DHP',  0xdf: 'EXP',
+        0xf0: 'JPG0',  0xf1: 'JPG1', 0xf2: 'JPG2',  0xf3: 'JPG3',
+        0xf4: 'JPG4',  0xf5: 'JPG5', 0xf6: 'JPG6',  0xf7: 'JPG7',
+        0xf8: 'JPG8',  0xf9: 'JPG9', 0xfa: 'JPG10', 0xfb: 'JPG11',
+        0xfc: 'JPG12', 0xfd: 'JPG13',
+        }
+    funcs = {
+        0xd8: PERIOD,
+        0xd9: PERIOD,
+        0xda: PASS,
+        0xd0: RST, 0xd1: RST, 0xd2: RST, 0xd3: RST,
+        0xd4: RST, 0xd5: RST, 0xd6: RST, 0xd7: RST,
         }
 
     def __init__(self, bytes):
@@ -69,12 +72,11 @@ class JPEG:
             if marker1 != 0xFF:
                 raise JPEGParseError, 'invalid marker1:0x%x' % marker1
             marker2 = io.read(1)
-            chunk_type  = maker_func_table.get(marker2, INVALID)
-
-            chunk = chunk_type(io)
+            chunk_layout = funcs.get(marker2, DEFAULT)
+            chunk = chunk_layout(io)
             if chunk is not None:
                 chunk['marker'] = marker2
                 self.chunks.append(chunk)
 
-            if chunk_type == EOI:
+            if marker2 == 0xd9:
                 return
