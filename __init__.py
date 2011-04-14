@@ -7,37 +7,15 @@ from bitstring import BitString
 
 import swftag
 from swftag import SWFTag
-
-def _lefmt(bytes_length):
-    if bytes_length == 2:
-        return '<H'
-    elif bytes_length == 4:
-        return '<L'
-    else:
-        raise ValueError
-
-def bytes2le(bytes):
-    "byte string to LittleEndian"
-    fmt = _lefmt(len(bytes))
-    return struct.unpack(fmt, bytes)[0]
-
-def le2bytes(i, length=4):
-    "Little Endian to n Byte"
-    fmt = _lefmt(length)
-    return struct.pack(fmt, i)
-
-def to_io(io_or_bytes):
-    if isinstance(io_or_bytes, str):
-        return StringIO(io_or_bytes)
-    else:
-        return io_or_bytes
+from utils import le2bytes, bytes2le
 
 class SWFParseError(Exception):
     """Raised when fairue swf binary parse"""
 
 class StructRect:
-    def __init__(self, io_or_bytes):
-        io = to_io(io_or_bytes)
+    def __init__(self, io):
+        if isinstance(io, str):
+            io = StringIO(io)
 
         first_byte = io.read(1)
         self.field_bits_length = ord(first_byte) >> 3
@@ -57,8 +35,9 @@ class StructRect:
         return self.bits.bytes
 
 class SWF:
-    def __init__(self, io_or_bytes):
-        io = to_io(io_or_bytes)
+    def __init__(self, io):
+        if isinstance(io, str):
+            io = StringIO(io)
 
         self.signature = io.read(3)
         self.version   = ord(io.read(1))

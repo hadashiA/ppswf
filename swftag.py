@@ -1,5 +1,6 @@
 import struct
-import ppswf
+
+from utils import le2bytes, bytes2le
 
 class SWFTagBase(object):
     def __init__(self, header_bytes, body_bytes, body_bytes_length=None):
@@ -27,7 +28,7 @@ class SWFTagBase(object):
     def build(self):
         return self._header_bytes + self._body_bytes
 
-    def set_length(self, size):
+    def set_body_bytes_length(self, size):
         if self.is_long():
             self._header_bytes = self._header_bytes[:2]
         header_num = bytes2le(self._header_bytes)
@@ -128,7 +129,7 @@ class DefineFont2(SWFTagBase):
 class DefineFontName(SWFTagBase):
     pass
 
-def SWFTag(io_or_bytes):
+def SWFTag(io):
     classes = {
         0:  End,
         1:  ShowFrame,
@@ -157,19 +158,19 @@ def SWFTag(io_or_bytes):
         88: DefineFontName,
         }
     
-    io = ppswf.to_io(io_or_bytes)
+    if isinstance(io, str):
+        io = StringIO(io)
 
     header_bytes = io.read(2)
-    header_num = ppswf.bytes2le(header_bytes)
+    header_num = bytes2le(header_bytes)
     tag_code = header_num >> 6
     body_bytes_length = header_num & 0x3f
     if body_bytes_length == 0x3f:
         more_header = io.read(4)
         header_bytes += more_header
-        body_bytes_length = ppswf.bytes2le(more_header)
+        body_bytes_length = bytes2le(more_header)
     body_bytes = io.read(body_bytes_length)
 
     return classes[tag_code](header_bytes=header_bytes,
                              body_bytes=body_bytes,
                              body_bytes_length=body_bytes_length)
-        
