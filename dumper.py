@@ -1,10 +1,16 @@
+import sys, os
+
+current_dir = os.path.dirname(os.path.realpath(__file__))
+if os.path.basename(current_dir) == 'ppswf':
+    sys.path.append(
+        os.path.realpath(os.path.join(current_dir, '..'))
+        )
+
 from ppswf import SWF
 
 def main():
-    import sys
     if len(sys.argv) == 2:
         path = sys.argv[1]
-        import os
         io = open(os.path.abspath(path))
         swf = SWF(io)
 
@@ -12,14 +18,14 @@ def main():
         print swf.signature
         print 'File version    ', swf.version
         print 'File size       ', swf.filesize
-        print 'Movie width     ', (swf.x_max - swf.x_min)
-        print 'Movie height    ', (swf.y_max - swf.y_min)
+        print 'Movie width     ', swf.width
+        print 'Movie height    ', swf.height
         print 'Frame rate      ', swf.frame_rate
         print 'Frame count     ', swf.frame_count
 
         print '---- Reading movie details ----'
         for tag in swf.tags:
-            print tag.type_name()
+            print tag
         
     else:
         print "usage python swf.py <input.swf>"

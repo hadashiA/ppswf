@@ -1,5 +1,6 @@
 import struct
 import math
+# import zlib
 from cStringIO import StringIO
 
 from bitstring import BitString
@@ -66,6 +67,11 @@ class SWF:
         self.frame_size  = StructRect(io)
         self.frame_rate  = bytes2le(io.read(2)) / 0x100
         self.frame_count = bytes2le(io.read(2))
+
+        # if self.is_compressed():
+        #     body = io.read()
+        #     io = StringIO(zlib.decompress(io.read()))
+        #     self.signature = 'FWS'
 
         self.tags = []
         tag = None
