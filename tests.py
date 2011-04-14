@@ -2,7 +2,11 @@ import unittest
 import os
 import sys
 
-
+current_dir = os.path.dirname(os.path.realpath(__file__))
+if os.path.basename(current_dir) == 'ppswf':
+    sys.path.append(
+        os.path.realpath(os.path.join(current_dir, '..'))
+        )
 
 from ppswf import SWF, SWFTag, StructRect
 
