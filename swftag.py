@@ -27,6 +27,17 @@ class SWFTagBase(object):
     def build(self):
         return self._header_bytes + self._body_bytes
 
+    def set_length(self, size):
+        if self.is_long():
+            self._header_bytes = self._header_bytes[:2]
+        header_num = bytes2le(self._header_bytes)
+
+        if size < 0x3f:                 # short
+            self._header_bytes = le2bytes((header_num & 0xffc0) + size, 2)
+        else:                           # long
+            self._header_bytes = le2bytes(header_num | 0x3f, 2) + le2bytes(size, 4)
+        self._body_bytes_length = size
+
 class End(SWFTagBase):
     pass
 
@@ -150,7 +161,7 @@ def SWFTag(io_or_bytes):
 
     header_bytes = io.read(2)
     header_num = ppswf.bytes2le(header_bytes)
-    tag_type = header_num >> 6
+    tag_code = header_num >> 6
     body_bytes_length = header_num & 0x3f
     if body_bytes_length == 0x3f:
         more_header = io.read(4)
@@ -158,7 +169,7 @@ def SWFTag(io_or_bytes):
         body_bytes_length = ppswf.bytes2le(more_header)
     body_bytes = io.read(body_bytes_length)
 
-    return classes[tag_type](header_bytes=header_bytes,
+    return classes[tag_code](header_bytes=header_bytes,
                              body_bytes=body_bytes,
                              body_bytes_length=body_bytes_length)
         
