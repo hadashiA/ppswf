@@ -79,16 +79,18 @@ class SWFTag:
     def __init__(self, io_or_bytes):
         io = io_or_bytes
 
-        header_num = bytes2le(io.read(2))
-        self.header_bits = BitString(int=header_num, length=16)
-        self.tag_type = self.header_bits[0:10].uint
-        self.body_bytes_length = self.header_bits[10:].uint
+        self.header_bytes = io.read(2)
+        header_num = bytes2le(self.header_bytes)
+        self.tag_type = header_num >> 6
+        self.body_bytes_length = header_num & 0x3f
         if self.body_bytes_length == 0x3f:
-            self.body_bytes_length = bytes2le(io.read(4))
+            more_header = io.read(4)
+            self.header_bytes += more_header
+            self.body_bytes_length = bytes2le(more_header)
         self.body_bytes = io.read(self.body_bytes_length)
         
     def __len__(self):
-        return 2 + self.body_bytes_length
+        return len(self.header_bytes) + self.body_bytes_length
 
     def is_end(self):
         return self.tag_type == 0
@@ -103,11 +105,7 @@ class SWFTag:
         return self.names.get(self.tag_type, 'Unknown')
 
     def build(self):
-        header = le2bytes(self.tag_header_bit.int, 2)
-        if self.is_long():
-            header += '\x3f'
-            header += le2bytes(self.body_bytes_length, 4)
-        return header + self.body_bytes
+        return self.header_bytes + self.body_bytes
         
 class SWF:
     def __init__(self, io_or_bytes):
@@ -120,8 +118,6 @@ class SWF:
         self.frame_size  = StructRect(io)
         self.frame_rate  = bytes2le(io.read(2)) / 0x100
         self.frame_count = bytes2le(io.read(2))
-
-        self.header_bytes_length = 5 + len(self.frame_size) + 4
 
         self.tags = []
         tag = None
@@ -161,5 +157,13 @@ class SWF:
     def height(self):
         return self.y_max - self.y_min
 
+    def build_header(self):
+        return self.signature + \
+               struct.pack('b', self.version) +  \
+               le2bytes(self.filesize, 4) + \
+               self.frame_size.build() + \
+               le2bytes(self.frame_rate * 0x100, 2) + \
+               le2bytes(self.frame_count, 2)
+        
     def build(self):
-        return ""
+        return self.build_header() + ''.join(tag.build() for tag in self.tags)

@@ -9,6 +9,7 @@ if os.path.basename(current_dir) == 'ppswf':
         )
 
 from ppswf import SWF, SWFTag, StructRect
+from bitstring import BitString
 
 fixtures_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures')
 cws_path = os.path.join(fixtures_dir, 'orz.swf')
@@ -40,7 +41,7 @@ class SWFTagTestCase(unittest.TestCase):
         self.tag_short = self.swf.tags[0]
         self.tag_long  = self.swf.tags[1]
 
-        tag_short_start = self.swf.header_bytes_length
+        tag_short_start = len(self.swf.build_header())
         tag_short_end   = tag_short_start + len(self.tag_short)
         self.tag_short_original_bytes = cws_bytes[tag_short_start:tag_short_end]
 
@@ -61,6 +62,16 @@ class SWFTagTestCase(unittest.TestCase):
         assert self.tag_long.body_bytes_length == 2276
         assert len(self.tag_long.body_bytes) == self.tag_long.body_bytes_length
 
+    def testBuildTagShort(self):
+        assert self.tag_short.build() == self.tag_short_original_bytes
+
+    def testBuildTagLong(self):
+        build    = self.tag_long.build()
+        original = self.tag_long_original_bytes
+
+        assert len(build) == len(original)
+        assert build == original
+
 class SWFTestCase(unittest.TestCase):
     def setUp(self):
         self.swf = SWF(cws_bytes)
@@ -76,6 +87,18 @@ class SWFTestCase(unittest.TestCase):
         assert self.swf.y_max == 240
         assert self.swf.frame_rate == 10.0
         assert self.swf.frame_count == 40
+
+    def testBuild(self):
+        original = cws_bytes
+        build    = self.swf.build()
+
+        build_header    = self.swf.build_header()
+        original_header = original[0:len(build_header)]
+
+        assert len(build_header) == len(original_header)
+        assert build_header == original_header
+        assert len(build) == len(original)
+        assert build == original
 
 if __name__ == '__main__':
     unittest.main()
