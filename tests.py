@@ -8,7 +8,7 @@ if os.path.basename(current_dir) == 'ppswf':
         os.path.realpath(os.path.join(current_dir, '..'))
         )
 
-from ppswf import SWF, SWFTag, StructRect
+from ppswf import SWF, StructRect, swftag
 from bitstring import BitString
 
 fixtures_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures')
@@ -50,17 +50,17 @@ class SWFTagTestCase(unittest.TestCase):
         self.tag_long_original_bytes = cws_bytes[tag_long_start:tag_long_end]
 
     def testParseTagShort(self):
-        assert self.tag_short.type_name() == 'SetBackgoundColor'
+        assert isinstance(self.tag_short, swftag.SetBackgroundColor)
         assert self.tag_short.body_bytes_length == 3
-        assert len(self.tag_short.body_bytes) == self.tag_short.body_bytes_length
-        assert self.tag_short.body_bytes[0] == '\xff'
-        assert self.tag_short.body_bytes[1] == '\xff'
-        assert self.tag_short.body_bytes[2] == '\xff'
+        assert len(self.tag_short.build_body()) == self.tag_short.body_bytes_length
+        assert self.tag_short.build_body()[0] == '\xff'
+        assert self.tag_short.build_body()[1] == '\xff'
+        assert self.tag_short.build_body()[2] == '\xff'
 
     def testParseTagLong(self):
-        assert self.tag_long.type_name() == 'DefineBitsJPEG2'
+        assert isinstance(self.tag_long, swftag.DefineBitsJPEG2)
         assert self.tag_long.body_bytes_length == 2276
-        assert len(self.tag_long.body_bytes) == self.tag_long.body_bytes_length
+        assert len(self.tag_long.build_body()) == self.tag_long.body_bytes_length
 
     def testBuildTagShort(self):
         assert self.tag_short.build() == self.tag_short_original_bytes

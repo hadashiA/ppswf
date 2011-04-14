@@ -4,6 +4,9 @@ from cStringIO import StringIO
 
 from bitstring import BitString
 
+import swftag
+from swftag import SWFTag
+
 def _lefmt(bytes_length):
     if bytes_length == 2:
         return '<H'
@@ -52,61 +55,6 @@ class StructRect:
     def build(self):
         return self.bits.bytes
 
-class SWFTag:
-    names = {
-        0:  'End',
-        1:  'ShowFrame',
-        2:  'DefineShape',
-        6:  'DefineBitsJPEG',
-        8:  'JPEGTables',
-        9:  'SetBackgoundColor',
-        11: 'DefineText',
-        12: 'DoAction',
-        20: 'DefineBitsLossLess',
-        21: 'DefineBitsJPEG2',
-        22: 'DefineShape2',
-        26: 'PlaceObject2',
-        32: 'DefineShape3',
-        35: 'DefineBitsJPEG3',
-        36: 'DefineBitsLossless2',
-        37: 'DefineEditText',
-        39: 'DefineSprite',
-        43: 'FrameLabel',
-        48: 'DefineFont2',
-        88: 'DefineFontName',
-        }
-
-    def __init__(self, io_or_bytes):
-        io = io_or_bytes
-
-        self.header_bytes = io.read(2)
-        header_num = bytes2le(self.header_bytes)
-        self.tag_type = header_num >> 6
-        self.body_bytes_length = header_num & 0x3f
-        if self.body_bytes_length == 0x3f:
-            more_header = io.read(4)
-            self.header_bytes += more_header
-            self.body_bytes_length = bytes2le(more_header)
-        self.body_bytes = io.read(self.body_bytes_length)
-        
-    def __len__(self):
-        return len(self.header_bytes) + self.body_bytes_length
-
-    def is_end(self):
-        return self.tag_type == 0
-
-    def is_long(self):
-        return self.body_bytes_length > 0x3f
-
-    def is_short(self):
-        return not self.is_long()
-
-    def type_name(self):
-        return self.names.get(self.tag_type, 'Unknown')
-
-    def build(self):
-        return self.header_bytes + self.body_bytes
-        
 class SWF:
     def __init__(self, io_or_bytes):
         io = to_io(io_or_bytes)
@@ -121,7 +69,7 @@ class SWF:
 
         self.tags = []
         tag = None
-        while tag is None or not tag.is_end():
+        while tag is None or not isinstance(tag, swftag.End):
             tag = SWFTag(io)
             self.tags.append(tag)
 
