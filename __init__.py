@@ -117,16 +117,11 @@ class SWF:
         self.version   = ord(io.read(1))
         self.filesize  = bytes2le(io.read(4))
 
-        frame_size = StructRect(io)
-        self.x_min = frame_size[0] / 20
-        self.x_max = frame_size[1] / 20
-        self.y_min = frame_size[2] / 20
-        self.y_max = frame_size[3] / 20
-
+        self.frame_size  = StructRect(io)
         self.frame_rate  = bytes2le(io.read(2)) / 0x100
         self.frame_count = bytes2le(io.read(2))
 
-        self.header_bytes_length = 5 + len(frame_size) + 4
+        self.header_bytes_length = 5 + len(self.frame_size) + 4
 
         self.tags = []
         tag = None
@@ -141,6 +136,30 @@ class SWF:
             return False
         else:
             raise SWFParseError, 'invalid signature %s' % self.signature
+
+    @property
+    def x_min(self):
+        return self.frame_size[0] / 20
+
+    @property
+    def x_max(self):
+        return self.frame_size[1] / 20
+
+    @property
+    def y_min(self):
+        return self.frame_size[2] / 20
+
+    @property
+    def y_max(self):
+        return self.frame_size[3] / 20
+
+    @property
+    def width(self):
+        return self.x_max - self.x_min
+
+    @property
+    def height(self):
+        return self.y_max - self.y_min
 
     def build(self):
         return ""
