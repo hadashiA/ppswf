@@ -51,16 +51,15 @@ class SWFTagTestCase(unittest.TestCase):
 
     def testParseTagShort(self):
         assert isinstance(self.tag_short, swftag.SetBackgroundColor)
-        assert self.tag_short.body_bytes_length == 3
-        assert len(self.tag_short.build_body()) == self.tag_short.body_bytes_length
-        assert self.tag_short.build_body()[0] == '\xff'
-        assert self.tag_short.build_body()[1] == '\xff'
-        assert self.tag_short.build_body()[2] == '\xff'
+        assert len(self.tag_short) == 2 + 3
+        assert self.tag_short.build()[2 + 0] == '\xff'
+        assert self.tag_short.build()[2 + 1] == '\xff'
+        assert self.tag_short.build()[2 + 2] == '\xff'
 
     def testParseTagLong(self):
         assert isinstance(self.tag_long, swftag.DefineBitsJPEG2)
-        assert self.tag_long.body_bytes_length == 2276
-        assert len(self.tag_long.build_body()) == self.tag_long.body_bytes_length
+        assert len(self.tag_long) == 2 + 4 + 2276
+        assert self.tag_long.build() == self.tag_long_original_bytes
 
     def testBuildTagShort(self):
         assert self.tag_short.build() == self.tag_short_original_bytes

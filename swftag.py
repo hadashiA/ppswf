@@ -1,36 +1,31 @@
+import struct
 import ppswf
 
-class SWFTagBase:
+class SWFTagBase(object):
     def __init__(self, header_bytes, body_bytes, body_bytes_length=None):
-        self.__header_bytes = header_bytes
-        self.__body_bytes   = body_bytes
+        self._header_bytes = header_bytes
+        self._body_bytes   = body_bytes
 
         if body_bytes_length is not None:
-            self.body_bytes_length = body_bytes_length
+            self._body_bytes_length = body_bytes_length
         else:
-            self.body_bytes_length = len(body_bytes)
+            self._body_bytes_length = len(body_bytes)
 
     def __len__(self):
-        return len(self.build_header()) + self.body_bytes_length
+        return len(self._header_bytes) + self._body_bytes_length
 
     def is_long(self):
-        return self.__body_bytes_length > 0x3f
+        return self._body_bytes_length > 0x3f
 
     def is_short(self):
         return not self.is_long()
-
-    def build_header(self):
-        return self.__header_bytes
-
-    def build_body(self):
-        return self.__body_bytes
 
     @property
     def tags(self):
         return []
 
     def build(self):
-        return self.build_header() + self.build_body()
+        return self._header_bytes + self._body_bytes
 
 class End(SWFTagBase):
     pass
@@ -48,7 +43,22 @@ class JPEGTables(SWFTagBase):
     pass
 
 class SetBackgroundColor(SWFTagBase):
-    pass
+    def __init__(self, rgb=None, **kwargs):
+        super(SetBackgroundColor, self).__init__(**kwargs)
+
+        if self._header_bytes is None:
+            self._header_bytes = ''
+
+        if rgb is not None:
+            self.rgb = rgb
+
+    def get_rgb(self):
+        return self._body_bytes
+
+    def set_rgb(self, rgb):
+        self._body_bytes = struct.pack('BBB', *rgb)
+
+    rgb = property(get_rgb, set_rgb)    
 
 class DefineText(SWFTagBase):
     pass

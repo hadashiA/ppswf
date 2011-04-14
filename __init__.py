@@ -107,7 +107,7 @@ class SWF:
 
     def build_header(self):
         return self.signature + \
-               struct.pack('b', self.version) +  \
+               struct.pack('B', self.version) +  \
                le2bytes(self.filesize, 4) + \
                self.frame_size.build() + \
                le2bytes(self.frame_rate * 0x100, 2) + \
@@ -115,3 +115,11 @@ class SWF:
         
     def build(self):
         return self.build_header() + ''.join(tag.build() for tag in self.tags)
+
+    def find_tag(self, cls):
+        for tag in self.tags:
+            if isinstance(tag, cls):
+                return tag
+
+    def find_tags(self, cls):
+        return tuple(tag for tag in self.tags if isinstance(tag, cls))
