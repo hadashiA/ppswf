@@ -36,7 +36,8 @@ class StructRect:
 
 class SWFImages:
     def __init__(self, owner):
-        self.__tags = [tag for tag in owner.tags if tag.is_image()]
+        self.owner = owner
+        self.__tags = [tag for tag in self.owner.tags if tag.is_image()]
 
     def __len__(self):
         return len(self.__tags)
