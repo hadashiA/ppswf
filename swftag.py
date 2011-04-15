@@ -87,9 +87,13 @@ class DefineBitsJPEG2(SWFTagBase):
     def get_image(self):
         return self._body_bytes
 
+    def cid(self):
+        return bytes2le(self._body_bytes[0:2])
+
     def set_image(self, value):
         if isinstance(value, str):
-            self._body_bytes = struct.pack('BBBB', MARKER1, SOI, MARKER1, EOI)
+            self._body_bytes = self._body_bytes[0:2]
+            self._body_bytes += struct.pack('BBBB', MARKER1, SOI, MARKER1, EOI)
             self._body_bytes += value
             self.set_body_bytes_length()
 
