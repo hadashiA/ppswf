@@ -14,7 +14,7 @@ def bytes2le(bytes):
 
 def le2bytes(i, length=4):
     "Little Endian to n bytes"
-    return struct.pack('<' + __fmt(len(bytes)), i)
+    return struct.pack('<' + __fmt(length), i)
 
 def bytes2be(bytes):
     "byte string to BigEndian"
