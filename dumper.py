@@ -31,13 +31,13 @@ def main():
         
         elif ext in ('.jpg', '.jpeg'):
             import md5
-            from ppswf.jpeg import JPEG
+            from ppswf.jpeg import JPEG, chunk_names
             
             jpeg = JPEG(io)
 
             print jpeg
             for chunk in jpeg.chunks:
-                dump = "%s:" % JPEG.chunk_names.get(chunk['marker'], 'Unknown')
+                dump = "%s:" % chunk_names.get(chunk['marker'], 'Unknown')
                 if 'length' in chunk:
                     dump += " length=%d" % chunk['length']
                 if 'data' in chunk:

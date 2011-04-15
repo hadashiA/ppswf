@@ -1,6 +1,7 @@
 import struct
 
 from utils import le2bytes, bytes2le
+from jpeg import JPEG, MARKER1, SOI, EOI
 
 class SWFTagBase(object):
     def __init__(self, header_bytes, body_bytes, body_bytes_length=None):
@@ -11,6 +12,8 @@ class SWFTagBase(object):
             self._body_bytes_length = body_bytes_length
         else:
             self._body_bytes_length = len(body_bytes)
+
+        self.filesize_changed = 0
 
     def __len__(self):
         return len(self._header_bytes) + self._body_bytes_length
@@ -28,7 +31,10 @@ class SWFTagBase(object):
     def build(self):
         return self._header_bytes + self._body_bytes
 
-    def set_body_bytes_length(self, size):
+    def set_body_bytes_length(self, size=None):
+        if size is None:
+            size = len(self._body_bytes)
+
         if self.is_long():
             self._header_bytes = self._header_bytes[:2]
         header_num = bytes2le(self._header_bytes)
@@ -37,6 +43,8 @@ class SWFTagBase(object):
             self._header_bytes = le2bytes((header_num & 0xffc0) + size, 2)
         else:                           # long
             self._header_bytes = le2bytes(header_num | 0x3f, 2) + le2bytes(size, 4)
+
+        self.filesize_changed = (size - self._body_bytes_length )
         self._body_bytes_length = size
 
 class End(SWFTagBase):
@@ -55,15 +63,6 @@ class JPEGTables(SWFTagBase):
     pass
 
 class SetBackgroundColor(SWFTagBase):
-    def __init__(self, rgb=None, **kwargs):
-        super(SetBackgroundColor, self).__init__(**kwargs)
-
-        if self._header_bytes is None:
-            self._header_bytes = ''
-
-        if rgb is not None:
-            self.rgb = rgb
-
     def get_rgb(self):
         return self._body_bytes
 
@@ -85,7 +84,16 @@ class DefineBitsLossless(SWFTagBase):
     pass
 
 class DefineBitsJPEG2(SWFTagBase):
-    pass
+    def get_image(self):
+        return self._body_bytes
+
+    def set_image(self, value):
+        if isinstance(value, str):
+            self._body_bytes = struct.pack('BBBB', MARKER1, SOI, MARKER1, EOI)
+            self._body_bytes += value
+            self.set_body_bytes_length()
+
+    image = property(get_image, set_image)
 
 class DefineShape2(SWFTagBase):
     pass

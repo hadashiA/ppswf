@@ -91,6 +91,7 @@ class SWF:
         return self.y_max - self.y_min
 
     def build_header(self):
+        self.filesize += sum(tag.filesize_changed for tag in self.tags)
         return self.signature + \
                struct.pack('B', self.version) +  \
                le2bytes(self.filesize, 4) + \

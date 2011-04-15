@@ -19,3 +19,7 @@ def le2bytes(i, length=4):
 def bytes2be(bytes):
     "byte string to BigEndian"
     return struct.unpack('>' + __fmt(len(bytes)), bytes)[0]
+
+def be2bytes(i, length=4):
+    "Big Endian to bytes"
+    return struct.pack('>' + __fmt(length), i)
