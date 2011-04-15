@@ -2,11 +2,11 @@ import unittest
 import os
 import sys
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-if os.path.basename(current_dir) == 'ppswf':
-    sys.path.append(
-        os.path.realpath(os.path.join(current_dir, '..'))
-        )
+# current_dir = os.path.dirname(os.path.realpath(__file__))
+# if os.path.basename(current_dir) == 'ppswf':
+#     sys.path.append(
+#         os.path.realpath(os.path.join(current_dir, '..'))
+#         )
 
 from ppswf import SWF, StructRect, swftag
 from bitstring import BitString
@@ -99,5 +99,5 @@ class SWFTestCase(unittest.TestCase):
         assert len(build) == len(original)
         assert build == original
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()
