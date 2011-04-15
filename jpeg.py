@@ -5,34 +5,40 @@ from utils import le2bytes, bytes2le, bytes2be
 class JPEGParseError(Exception):
     """Raised when fairue jpeg binary parse"""
     
-class JPEG:
-    def PERIOD(io):
+def PERIOD(io):
+    return {}
+
+def TC(io):                         # Tag, Content
+    start_pos = io.tell()
+    while True:
+        next_marker1 = ord(io.read(1))
+        if next_marker1 != 0xff:
+            continue
+        
+        next_marker2 = ord(io.read(1))
+        if next_marker2 == 0x00:
+            continue
+        
+        end_pos = io.tell() - 2
+        length = end_pos - start_pos
+        io.seek(-(length + 2), 1)
+        data = io.read(length)
+    
         return {
-            'data': None,
-            'lengh': None,
-            }
-
-    def PASS(io):
-        return None
-
-    def RST(io):
-        while True:
-            next_marker1 = io.read(1)
-            if next_marker1 != 0xff:
-                continue
-            
-            next_marker2 = io.read(1)
-            if next_marker2 == 0x00:
-                continue
-
-    def DEFAULT(io):
-        length = bytes2be(io.read(2))
-        return {
-            'data': io.read(length - 2),
             'length': length,
+            'data': data
             }
 
-    names = {
+
+def TLC(io):                        # Tag, Length, Content
+    length = bytes2be(io.read(2))
+    return {
+        'data': io.read(length - 2),
+        'length': length,
+        }
+
+class JPEG:
+    chunk_names = {
         0xd8: 'SOI',
         0xe0: 'APP0',  0xe1: 'APP1',  0xe2: 'APP2',  0xe3: 'APP3',
         0xe4: 'APP4',  0xe5: 'APP5',  0xe6: 'APP6',  0xe7: 'APP7',
@@ -56,27 +62,29 @@ class JPEG:
         0xf8: 'JPG8',  0xf9: 'JPG9', 0xfa: 'JPG10', 0xfb: 'JPG11',
         0xfc: 'JPG12', 0xfd: 'JPG13',
         }
-    funcs = {
+    chunk_layouts = {
         0xd8: PERIOD,
         0xd9: PERIOD,
-        0xda: PASS,
-        0xd0: RST, 0xd1: RST, 0xd2: RST, 0xd3: RST,
-        0xd4: RST, 0xd5: RST, 0xd6: RST, 0xd7: RST,
+        0xda: TC,
+        0xd0: TC, 0xd1: TC, 0xd2: TC, 0xd3: TC,
+        0xd4: TC, 0xd5: TC, 0xd6: TC, 0xd7: TC,
         }
 
-    def __init__(self, bytes):
-        io = StringIO(bytes)
+    def __init__(self, io):
+        if isinstance(io, str):
+            io = StringIO(io)
+
         self.chunks = []
 
-        while marker1 = io.read(1):
-            if marker1 != 0xFF:
+        while True:
+            marker1 = ord(io.read(1))
+            if marker1 != 0xff:
                 raise JPEGParseError, 'invalid marker1:0x%x' % marker1
-            marker2 = io.read(1)
-            chunk_layout = funcs.get(marker2, DEFAULT)
+            marker2 = ord(io.read(1))
+            chunk_layout = JPEG.chunk_layouts.get(marker2, TLC)
             chunk = chunk_layout(io)
-            if chunk is not None:
-                chunk['marker'] = marker2
-                self.chunks.append(chunk)
+            chunk['marker'] = marker2
+            self.chunks.append(chunk)
 
-            if marker2 == 0xd9:
+            if marker2 == 0xd9:         # EOI
                 return
