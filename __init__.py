@@ -34,6 +34,22 @@ class StructRect:
     def build(self):
         return self.bits.bytes
 
+class SWFImages:
+    def __init__(self, owner):
+        self.__tags = [tag for tag in owner.tags if tag.is_image()]
+
+    def __len__(self):
+        return len(self.__tags)
+
+    def __iter__(self):
+        return iter(self.__tags)
+
+    def __getitem__(self):
+        pass
+
+    def __setitem__(self):
+        pass
+
 class SWF:
     def __init__(self, io):
         if isinstance(io, str):
@@ -57,6 +73,8 @@ class SWF:
         while tag is None or not isinstance(tag, swftag.End):
             tag = SWFTag(io)
             self.tags.append(tag)
+
+        self.__images = None
 
     def is_compressed(self):
         if self.signature == 'CWS':
@@ -91,7 +109,8 @@ class SWF:
         return self.y_max - self.y_min
 
     def build_header(self):
-        self.filesize += sum(tag.filesize_changed for tag in self.tags)
+        # self.filesize += sum(tag.filesize_changed for tag in self.tags)
+        self.filesize = 12 + len(self.frame_size) + sum(len(tag) for tag in self.tags)
         return self.signature + \
                struct.pack('B', self.version) +  \
                le2bytes(self.filesize, 4) + \
@@ -109,3 +128,9 @@ class SWF:
 
     def find_tags(self, cls):
         return tuple(tag for tag in self.tags if isinstance(tag, cls))
+
+    @property
+    def images(self):
+        if self.__images is None:
+            self.__images = SWFImages(self)
+        return self.__images

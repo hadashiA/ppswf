@@ -13,8 +13,6 @@ class SWFTagBase(object):
         else:
             self._body_bytes_length = len(body_bytes)
 
-        self.filesize_changed = 0
-
     def __len__(self):
         return len(self._header_bytes) + self._body_bytes_length
 
@@ -44,8 +42,10 @@ class SWFTagBase(object):
         else:                           # long
             self._header_bytes = le2bytes(header_num | 0x3f, 2) + le2bytes(size, 4)
 
-        self.filesize_changed = (size - self._body_bytes_length )
         self._body_bytes_length = size
+
+    def is_image(self):
+        return False
 
 class End(SWFTagBase):
     pass
@@ -81,7 +81,8 @@ class DefineSound(SWFTagBase):
     pass
 
 class DefineBitsLossless(SWFTagBase):
-    pass
+    def is_image(self):
+        return True
 
 class DefineBitsJPEG2(SWFTagBase):
     def get_image(self):
@@ -99,6 +100,9 @@ class DefineBitsJPEG2(SWFTagBase):
 
     image = property(get_image, set_image)
 
+    def is_image(self):
+        return True
+
 class DefineShape2(SWFTagBase):
     pass
 
@@ -115,10 +119,12 @@ class DefineButton2(SWFTagBase):
     pass
 
 class DefineBitsJPEG3(SWFTagBase):
-    pass
+    def is_image(self):
+        return True
 
 class DefineBitsLossless2(SWFTagBase):
-    pass
+    def is_image(self):
+        return True
 
 class DefineEditText(SWFTagBase):
     pass

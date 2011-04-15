@@ -8,7 +8,7 @@ import sys
 #         os.path.realpath(os.path.join(current_dir, '..'))
 #         )
 
-from ppswf import SWF, StructRect, swftag
+from ppswf import SWF, StructRect, SWFImages, swftag
 from bitstring import BitString
 
 fixtures_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures')
@@ -86,6 +86,10 @@ class SWFTestCase(unittest.TestCase):
         assert self.swf.y_max == 240
         assert self.swf.frame_rate == 10.0
         assert self.swf.frame_count == 40
+
+    def testFilteringImageTags(self):
+        assert isinstance(self.swf.images, SWFImages)
+        assert len(self.swf.images) == 2
 
     def testBuild(self):
         original = cws_bytes
