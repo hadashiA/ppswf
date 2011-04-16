@@ -6,6 +6,8 @@ if os.path.basename(current_dir) == 'ppswf':
         os.path.realpath(os.path.join(current_dir, '..'))
         )
 
+from bitstring import BitString
+
 def main():
     if len(sys.argv) == 2:
         path = sys.argv[1]
@@ -27,7 +29,8 @@ def main():
             
             print '---- Reading movie details ----'
             for tag in swf.tags:
-                print tag
+                print "%s header=%s" % (tag.__class__,
+                                        BitString(bytes=tag.build_header()))
         
         elif ext in ('.jpg', '.jpeg'):
             import md5

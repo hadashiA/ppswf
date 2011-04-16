@@ -4,20 +4,20 @@ from utils import le2bytes, bytes2le
 from jpeg import JPEG, MARKER1, SOI, EOI
 
 class SWFTagBase(object):
-    def __init__(self, header_bytes, body_bytes, body_bytes_length=None):
-        self._header_bytes = header_bytes
-        self._body_bytes   = body_bytes
+    __header_bytes      = None
+    __body_bytes        = None
+    __body_bytes_length = None
 
-        if body_bytes_length is not None:
-            self._body_bytes_length = body_bytes_length
-        else:
-            self._body_bytes_length = len(body_bytes)
+    def __init__(self, header_bytes, body_bytes, body_bytes_length=None):
+        self.__header_bytes = header_bytes
+        self._body_bytes    = body_bytes
+        self.__body_bytes_length = body_bytes_length
 
     def __len__(self):
-        return len(self._header_bytes) + self._body_bytes_length
+        return len(self.build_header()) + self.__body_bytes_length
 
     def is_long(self):
-        return self._body_bytes_length > 0x3f
+        return self.__body_bytes_length > 0x3f
 
     def is_short(self):
         return not self.is_long()
@@ -26,23 +26,31 @@ class SWFTagBase(object):
     def tags(self):
         return []
 
-    def build(self):
-        return self._header_bytes + self._body_bytes
+    def build_header(self, tag_code=None, body_bytes_length=None):
+        # if not update
+        if self.__header_bytes and tag_code is None and body_bytes_length is None:
+            return self.__header_bytes
 
-    def set_body_bytes_length(self, size=None):
-        if size is None:
-            size = len(self._body_bytes)
+        if tag_code is None or body_bytes_length is None:
+            header_num = bytes2le(self.__header_bytes)
 
-        if self.is_long():
-            self._header_bytes = self._header_bytes[:2]
-        header_num = bytes2le(self._header_bytes)
+        if tag_code is None:
+            tag_code = header_num >> 6
 
-        if size < 0x3f:                 # short
-            self._header_bytes = le2bytes((header_num & 0xffc0) + size, 2)
+        if body_bytes_length is None:
+            body_bytes_length = header_num & 0x3f
+
+        if body_bytes_length < 0x3f:    # short
+            self.__header_bytes = le2bytes((tag_code << 6) + body_bytes_length, 2)
         else:                           # long
-            self._header_bytes = le2bytes(header_num | 0x3f, 2) + le2bytes(size, 4)
+            self.__header_bytes = le2bytes((tag_code << 6) + 0x3f, 2) + \
+                                  le2bytes(body_bytes_length, 4)
+        self.__body_bytes_length = body_bytes_length
 
-        self._body_bytes_length = size
+        return self.__header_bytes
+
+    def build(self):
+        return self.build_header() + self._body_bytes
 
     def is_image(self):
         return False
@@ -63,6 +71,13 @@ class JPEGTables(SWFTagBase):
     pass
 
 class SetBackgroundColor(SWFTagBase):
+    def __init__(self, rgb=None, **kwargs):
+        if rgb is not None:
+            self.build_header(tag_code=9, body_bytes_length=3)
+            self.rgb = rgb
+        else:
+            super(SetBackgroundColor, self).__init__(**kwargs)
+
     def get_rgb(self):
         return self._body_bytes
 

@@ -37,19 +37,32 @@ class StructRect:
 class SWFImages:
     def __init__(self, owner):
         self.owner = owner
-        self.__tags = [tag for tag in self.owner.tags if tag.is_image()]
+        self.__tags_for_cid_cache = None
 
     def __len__(self):
-        return len(self.__tags)
+        return len(self.__tags_for_cid())
 
     def __iter__(self):
-        return iter(self.__tags)
+        return iter(self.__tags_for_cid().values())
 
-    def __getitem__(self):
-        pass
+    def __getitem__(self, cid):
+        return self.__tags_for_cid()[cid]
 
-    def __setitem__(self):
-        pass
+    def __setitem__(self, cid, new_tag):
+        self.__tags_for_cid_cache = None
+        for i, tag in enumerate(self.owner.tags):
+            if tag.is_image() and tag.cid() == cid:
+                self.owner.tags[i] = new_tag
+                return
+
+    def __tags_for_cid(self):
+        if self.__tags_for_cid_cache is None:
+            self.__tags_for_cid_cache =  dict((t.cid(), t)
+                                              for t in self.owner.tags if t.is_image())
+        return self.__tags_for_cid_cache
+
+    def cids(self):
+        return self.__tags_for_cid().keys()
 
 class SWF:
     def __init__(self, io):
