@@ -18,11 +18,15 @@ def main():
 
     # bg_tag = swf.find_tag(swftag.SetBackgroundColor)
     # bg_tag.rgb = (255,0,0)
-    swf.tags[0] = swftag.SetBackgroundColor(rgb=(255,0,0))
+    # swf.tags[0] = swftag.SetBackgroundColor(rgb=(255,0,0))
 
     # jpeg_tag = swf.images[1]
+    jpeg_bytes = open(jpeg_path).read()
     # # jpeg_tag = swf.find_tag(swftag.DefineBitsJPEG2)
-    # jpeg_tag.image = open(jpeg_path).read()
+    # jpeg_tag.image = jpeg_bytes
+    jpeg_tag = swftag.DefineBitsJPEG2(jpeg=jpeg_bytes)
+
+    swf.images[1] = jpeg_tag
 
     out_dir = os.path.expanduser('~/tmp')
     open(os.path.join(out_dir, 'orz2.swf'), 'w').write(swf.build())

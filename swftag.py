@@ -55,21 +55,22 @@ class SWFTagBase(object):
         return self.build_header() + self._body_bytes
 
 class SWFTagImage(SWFTagBase):
-    __cid = None
+    _body_bytes = '\x00\x00'
 
     @AttrAccessor
     def cid():
         def fget(self):
-            if self.__cid is not None:
-                return self.__cid
-            elif self._body_bytes:
-                self.__cid = bytes2le(self._body_bytes[0:2])
-                return self.__cid
+            if self._body_bytes is not None:
+                return bytes2le(self._body_bytes[0:2])
             else:
-                raise SWFTagBuildError, 'Cannt build body. Not known image cid.'
+                raise SWFTagBuildError(
+                    'Cannt build body. Not known image cid.'
+                    '(%s)' % self.__class__.__name__
+                    )
 
         def fset(self, cid):
-            self.__cid = cid
+            cid = cid or 0
+            self._body_bytes = le2bytes(cid, 2) + self._body_bytes[2:]
 
         return locals()
 
@@ -126,11 +127,10 @@ class DefineBitsLossless(SWFTagImage):
 class DefineBitsJPEG2(SWFTagImage):
     CODE = 21
 
-    def __init__(self, jpeg_bytes=None, cid=None, **kwargs):
-        if jpeg_bytes is not None:
+    def __init__(self, jpeg=None, cid=None, **kwargs):
+        if jpeg is not None:
             self.cid = cid
-            self.image = jpeg_bytes
-            self.build_header()
+            self.image = jpeg
         else:
             super(DefineBitsJPEG2, self).__init__(**kwargs)
 
@@ -141,9 +141,11 @@ class DefineBitsJPEG2(SWFTagImage):
 
         def fset(self, value):
             if isinstance(value, str):
-                self._body_bytes = le2bytes(self.cid, 2) + \
-                                   struct.pack('BBBB', MARKER1, SOI, MARKER1, EOI) + \
+                self._body_bytes = self._body_bytes[:2] + \
+                                   struct.pack('BBBB', MARKER1, SOI, MARKER1, EOI) +\
                                    value
+            else:
+                raise NotImplementedError
 
         return locals()
 

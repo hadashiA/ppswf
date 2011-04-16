@@ -51,7 +51,8 @@ class SWFImages:
     def __setitem__(self, cid, new_tag):
         self.__tags_for_cid_cache = None
         for i, tag in enumerate(self.owner.tags):
-            if tag.is_image() and tag.cid() == cid:
+            if hasattr(tag, 'cid') and tag.cid == cid:
+                new_tag.cid = cid
                 self.owner.tags[i] = new_tag
                 return
 
