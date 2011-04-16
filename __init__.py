@@ -57,14 +57,18 @@ class SWFImages:
 
     def __tags_for_cid(self):
         if self.__tags_for_cid_cache is None:
-            self.__tags_for_cid_cache =  dict((t.cid(), t)
-                                              for t in self.owner.tags if t.is_image())
+            self.__tags_for_cid_cache =  dict((t.cid, t)
+                                              for t in self.owner.tags
+                                              if issubclass(t.__class__,
+                                                            swftag.SWFTagImage))
         return self.__tags_for_cid_cache
 
     def cids(self):
         return self.__tags_for_cid().keys()
 
 class SWF:
+    __images = None
+
     def __init__(self, io):
         if isinstance(io, str):
             io = StringIO(io)
@@ -87,8 +91,6 @@ class SWF:
         while tag is None or not isinstance(tag, swftag.End):
             tag = SWFTag(io)
             self.tags.append(tag)
-
-        self.__images = None
 
     def is_compressed(self):
         if self.signature == 'CWS':

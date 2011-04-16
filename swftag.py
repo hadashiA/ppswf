@@ -3,15 +3,23 @@ import struct
 from utils import le2bytes, bytes2le
 from jpeg import JPEG, MARKER1, SOI, EOI
 
+def AttrAccessor(function):
+    return property(**function())
+
+class SWFTagBuildError(Exception):
+    """Raised when fairue swf tag build"""
+
 class SWFTagBase(object):
     __header_bytes      = None
-    __body_bytes        = None
     __body_bytes_length = None
 
+    _body_bytes = None
+
     def __init__(self, header_bytes, body_bytes, body_bytes_length=None):
-        self.__header_bytes = header_bytes
-        self._body_bytes    = body_bytes
+        self.__header_bytes      = header_bytes
         self.__body_bytes_length = body_bytes_length
+
+        self._body_bytes = body_bytes
 
     def __len__(self):
         return len(self.build_header()) + self.__body_bytes_length
@@ -26,171 +34,192 @@ class SWFTagBase(object):
     def tags(self):
         return []
 
-    def build_header(self, tag_code=None, body_bytes_length=None):
-        # if not update
-        if self.__header_bytes and tag_code is None and body_bytes_length is None:
-            return self.__header_bytes
+    def build_header(self):
+        body_bytes_length_now = len(self._body_bytes)
+        if body_bytes_length_now == self.__body_bytes_length:
+            if self.__header_bytes is not None:
+                return self.__header_bytes
+        else:
+            self.__body_bytes_length = body_bytes_length_now
 
-        if tag_code is None or body_bytes_length is None:
-            header_num = bytes2le(self.__header_bytes)
-
-        if tag_code is None:
-            tag_code = header_num >> 6
-
-        if body_bytes_length is None:
-            body_bytes_length = header_num & 0x3f
-
-        if body_bytes_length < 0x3f:    # short
-            self.__header_bytes = le2bytes((tag_code << 6) + body_bytes_length, 2)
+        if self.__body_bytes_length < 0x3f:    # short
+            self.__header_bytes = le2bytes((self.CODE << 6) + \
+                                           self.__body_bytes_length, 2)
         else:                           # long
-            self.__header_bytes = le2bytes((tag_code << 6) + 0x3f, 2) + \
-                                  le2bytes(body_bytes_length, 4)
-        self.__body_bytes_length = body_bytes_length
+            self.__header_bytes = le2bytes((self.CODE << 6) + 0x3f, 2) + \
+                                  le2bytes(self.__body_bytes_length, 4)
 
         return self.__header_bytes
 
     def build(self):
         return self.build_header() + self._body_bytes
 
-    def is_image(self):
-        return False
+class SWFTagImage(SWFTagBase):
+    __cid = None
+
+    @AttrAccessor
+    def cid():
+        def fget(self):
+            if self.__cid is not None:
+                return self.__cid
+            elif self._body_bytes:
+                self.__cid = bytes2le(self._body_bytes[0:2])
+                return self.__cid
+            else:
+                raise SWFTagBuildError, 'Cannt build body. Not known image cid.'
+
+        def fset(self, cid):
+            self.__cid = cid
+
+        return locals()
+
+class Unknown(SWFTagBase):
+    pass
 
 class End(SWFTagBase):
-    pass
+    CODE = 0
 
 class ShowFrame(SWFTagBase):
-    pass
+    CODE = 1
 
 class DefineShape(SWFTagBase):
-    pass
+    CODE = 2
 
 class DefineBits(SWFTagBase):
-    pass
+    CODE = 6
 
 class JPEGTables(SWFTagBase):
-    pass
+    CODE = 8
 
 class SetBackgroundColor(SWFTagBase):
+    CODE = 9
+
     def __init__(self, rgb=None, **kwargs):
         if rgb is not None:
-            self.build_header(tag_code=9, body_bytes_length=3)
             self.rgb = rgb
         else:
             super(SetBackgroundColor, self).__init__(**kwargs)
 
-    def get_rgb(self):
-        return self._body_bytes
+    @AttrAccessor
+    def rgb():
+        def fget(self):
+            return self._body_bytes
 
-    def set_rgb(self, rgb):
-        self._body_bytes = struct.pack('BBB', *rgb)
+        def fset(self, rgb):
+            self._body_bytes = struct.pack('BBB', *rgb)
 
-    rgb = property(get_rgb, set_rgb)    
+        return locals()
+
 
 class DefineText(SWFTagBase):
-    pass
+    CODE = 11
 
 class DoAction(SWFTagBase):
-    pass
+    CODE = 12
 
 class DefineSound(SWFTagBase):
-    pass
+    CODE = 14
 
-class DefineBitsLossless(SWFTagBase):
-    def is_image(self):
-        return True
+class DefineBitsLossless(SWFTagImage):
+    CODE = 20
 
-class DefineBitsJPEG2(SWFTagBase):
-    def get_image(self):
-        return self._body_bytes
+class DefineBitsJPEG2(SWFTagImage):
+    CODE = 21
 
-    def cid(self):
-        return bytes2le(self._body_bytes[0:2])
+    def __init__(self, jpeg_bytes=None, cid=None, **kwargs):
+        if jpeg_bytes is not None:
+            self.cid = cid
+            self.image = jpeg_bytes
+            self.build_header()
+        else:
+            super(DefineBitsJPEG2, self).__init__(**kwargs)
 
-    def set_image(self, value):
-        if isinstance(value, str):
-            self._body_bytes = self._body_bytes[0:2]
-            self._body_bytes += struct.pack('BBBB', MARKER1, SOI, MARKER1, EOI)
-            self._body_bytes += value
-            self.set_body_bytes_length()
+    @AttrAccessor
+    def image():
+        def fget(self):
+            return self._body_bytes
 
-    image = property(get_image, set_image)
+        def fset(self, value):
+            if isinstance(value, str):
+                self._body_bytes = le2bytes(self.cid, 2) + \
+                                   struct.pack('BBBB', MARKER1, SOI, MARKER1, EOI) + \
+                                   value
 
-    def is_image(self):
-        return True
+        return locals()
 
 class DefineShape2(SWFTagBase):
-    pass
+    CODE = 22
 
 class PlaceObject2(SWFTagBase):
-    pass
+    CODE = 26
 
 class RemoveObject2(SWFTagBase):
-    pass
+    CODE = 28
 
 class DefineShape3(SWFTagBase):
-    pass
+    CODE = 32
 
 class DefineButton2(SWFTagBase):
-    pass
+    CODE = 34
 
-class DefineBitsJPEG3(SWFTagBase):
-    def is_image(self):
-        return True
+class DefineBitsJPEG3(SWFTagImage):
+    CODE = 35
 
-class DefineBitsLossless2(SWFTagBase):
-    def is_image(self):
-        return True
+class DefineBitsLossless2(SWFTagImage):
+    CODE = 36
 
 class DefineEditText(SWFTagBase):
-    pass
+    CODE = 37
 
 class DefineSprite(SWFTagBase):
-    pass
+    CODE = 39
 
 class FrameLabel(SWFTagBase):
-    pass
+    CODE = 43
 
 class SoundStreamHead2(SWFTagBase):
-    pass
+    CODE = 45
 
 class DefineMorphShape(SWFTagBase):
-    pass
+    CODE = 46
 
 class DefineFont2(SWFTagBase):
-    pass
+    CODE = 48
 
 class DefineFontName(SWFTagBase):
-    pass
+    CODE = 88
+
+tag_types = [
+    End,
+    ShowFrame,
+    DefineShape,
+    DefineBits,
+    JPEGTables,
+    SetBackgroundColor,
+    DefineText,
+    DoAction,
+    DefineSound,
+    DefineBitsLossless,
+    DefineBitsJPEG2,
+    DefineShape2,
+    PlaceObject2,
+    RemoveObject2,
+    DefineShape3,
+    DefineButton2,
+    DefineBitsJPEG3,
+    DefineBitsLossless2,
+    DefineEditText,
+    DefineSprite,
+    FrameLabel,
+    SoundStreamHead2,
+    DefineMorphShape,
+    DefineFont2,
+    DefineFontName,
+    ]
+
+tag_types_for_code = dict((tag_type.CODE, tag_type) for tag_type in tag_types)
 
 def SWFTag(io):
-    classes = {
-        0:  End,
-        1:  ShowFrame,
-        2:  DefineShape,
-        6:  DefineBits,
-        8:  JPEGTables,
-        9:  SetBackgroundColor,
-        11: DefineText,
-        12: DoAction,
-        14: DefineSound,
-        20: DefineBitsLossless,
-        21: DefineBitsJPEG2,
-        22: DefineShape2,
-        26: PlaceObject2,
-        28: RemoveObject2,
-        32: DefineShape3,
-        34: DefineButton2,
-        35: DefineBitsJPEG3,
-        36: DefineBitsLossless2,
-        37: DefineEditText,
-        39: DefineSprite,
-        43: FrameLabel,
-        45: SoundStreamHead2,
-        46: DefineMorphShape,
-        48: DefineFont2,
-        88: DefineFontName,
-        }
-    
     if isinstance(io, str):
         io = StringIO(io)
 
@@ -204,6 +233,7 @@ def SWFTag(io):
         body_bytes_length = bytes2le(more_header)
     body_bytes = io.read(body_bytes_length)
 
-    return classes[tag_code](header_bytes=header_bytes,
-                             body_bytes=body_bytes,
-                             body_bytes_length=body_bytes_length)
+    tag_type = tag_types_for_code.get(tag_code, Unknown)
+    return tag_type(header_bytes=header_bytes,
+                    body_bytes=body_bytes,
+                    body_bytes_length=body_bytes_length)
