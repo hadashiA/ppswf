@@ -1,4 +1,4 @@
-import struct
+import struct.pack, struct.unpack
 import math
 # import zlib
 from cStringIO import StringIO
