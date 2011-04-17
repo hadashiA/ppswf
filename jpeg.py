@@ -1,7 +1,6 @@
 import struct
 from cStringIO import StringIO
 
-from utils import le2bytes, bytes2le, bytes2be
 import swftag
 
 class JPEGParseError(Exception):
@@ -57,7 +56,7 @@ def TC(io):                         # Tag, Content
         return {'data': data}
 
 def TLC(io):                        # Tag, Length, Content
-    length = bytes2be(io.read(2))
+    length, = struct.unpack('>H', io.read(2))
     return {'data': io.read(length - 2), 'length': length}
 
 chunk_layouts = {

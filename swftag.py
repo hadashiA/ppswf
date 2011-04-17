@@ -1,10 +1,7 @@
 import struct
 
-from utils import le2bytes, bytes2le
+from utils import AttrAccessor
 from jpeg import JPEG, MARKER1, SOI, EOI
-
-def AttrAccessor(function):
-    return property(**function())
 
 class SWFTagBuildError(Exception):
     """Raised when fairue swf tag build"""
@@ -63,15 +60,16 @@ class SWFTagImage(SWFTagBase):
     def cid():
         def fget(self):
             if self.__cid is None and self._body_bytes is not None:
-                self.__cid = bytes2le(self._body_bytes[0:2])
+                self.__cid, = struct.unpack('<H', self._body_bytes[:2])
             return self.__cid
 
         def fset(self, cid):
             self.__cid = cid or 0
             if self._body_bytes is None:
-                self._body_bytes = le2bytes(self.__cid, 2)
+                self._body_bytes, = struct.unpack('<H', self.__cid)
             else:
-                self._body_bytes = le2bytes(self.__cid, 2) + self._body_bytes[2:]
+                self._body_bytes = struct.unpack('<H', self.__cid)[0] + \
+                                   self.body_bytes[2:]
 
         return locals()
 
@@ -228,13 +226,13 @@ def SWFTag(io):
         io = StringIO(io)
 
     header_bytes = io.read(2)
-    header_num = bytes2le(header_bytes)
+    header_num, = struct.unpack('<H', header_bytes)
     tag_code = header_num >> 6
     body_bytes_length = header_num & 0x3f
     if body_bytes_length == 0x3f:
         more_header = io.read(4)
         header_bytes += more_header
-        body_bytes_length = bytes2le(more_header)
+        body_bytes_length, = struct.unpack('<L', more_header)
     body_bytes = io.read(body_bytes_length)
 
     tag_type = tag_types_for_code.get(tag_code, Unknown)

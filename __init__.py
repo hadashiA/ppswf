@@ -7,7 +7,6 @@ from bitstring import BitString
 
 import swftag
 from swftag import SWFTag
-from utils import le2bytes, bytes2le
 
 class SWFParseError(Exception):
     """Raised when fairue swf binary parse"""
@@ -126,12 +125,9 @@ class SWF:
     def build_header(self):
         # self.filesize += sum(tag.filesize_changed for tag in self.tags)
         self.filesize = 12 + len(self.frame_size) + sum(len(tag) for tag in self.tags)
-        return self.signature + \
-               struct.pack('B', self.version) +  \
-               le2bytes(self.filesize, 4) + \
+        return struct.pack('<3sBL', self.signature, self.version, self.filesize) + \
                self.frame_size.build() + \
-               le2bytes(self.frame_rate * 0x100, 2) + \
-               le2bytes(self.frame_count, 2)
+               struct.pack('<HH', self.frame_rate * 0x100, self.frame_count)
         
     def build(self):
         return self.build_header() + ''.join(tag.build() for tag in self.tags)
