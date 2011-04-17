@@ -9,9 +9,6 @@ from cStringIO import StringIO
 class GIFParseError(Exception):
     """Raised when fairue gif parse"""
 
-def ImageBlock(io):
-    pass
-
 class GIF:
     def __init__(self, io):
         if isinstance(io, str):
@@ -34,8 +31,11 @@ class GIF:
         self.blocks = []
         while True:
             next_byte = io.read(1)
-            if next_byte = 0x3b:
+            if next_byte == 0x3b:
                 return
+            elif next_byte == 0x2c:     # Imageblock
+                struct.unpack('<HHHH')
+                
 
     @property
     def is_pallete_on(self):
