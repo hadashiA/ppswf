@@ -48,7 +48,7 @@ class SWFTagBase(object):
                                               self.__body_bytes_length)
         else:                           # long
             self.__header_bytes = struct.pack('<HL',
-                                              (self.CODE << 6 + 0x3f),
+                                              (self.CODE << 6) + 0x3f,
                                               self.__body_bytes_length)
 
         return self.__header_bytes
@@ -57,19 +57,21 @@ class SWFTagBase(object):
         return self.build_header() + self._body_bytes
 
 class SWFTagImage(SWFTagBase):
-    _body_bytes = '\x00\x00'
+    __cid = None
 
     @AttrAccessor
     def cid():
         def fget(self):
-            if self._body_bytes is None:
-                return None
-            else:
-                return bytes2le(self._body_bytes[0:2])
+            if self.__cid is None and self._body_bytes is not None:
+                self.__cid = bytes2le(self._body_bytes[0:2])
+            return self.__cid
 
         def fset(self, cid):
-            cid = cid or 0
-            self._body_bytes = le2bytes(cid, 2) + self._body_bytes[2:]
+            self.__cid = cid or 0
+            if self._body_bytes is None:
+                self._body_bytes = le2bytes(self.__cid, 2)
+            else:
+                self._body_bytes = le2bytes(self.__cid, 2) + self._body_bytes[2:]
 
         return locals()
 
@@ -140,9 +142,10 @@ class DefineBitsJPEG2(SWFTagImage):
 
         def fset(self, value):
             if isinstance(value, str):
-                self._body_bytes = struct.pack('2sBBBB',
-                                               self._body_bytes[:2],
-                                               MARKER1, SOI, MARKER1, EOI) + value
+                self._body_bytes = struct.pack('<HBBBB',
+                                               self.cid or 0,
+                                               MARKER1, SOI, MARKER1, EOI
+                                               ) + value
             else:
                 raise NotImplementedError
 
