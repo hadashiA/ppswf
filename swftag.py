@@ -43,11 +43,13 @@ class SWFTagBase(object):
             self.__body_bytes_length = body_bytes_length_now
 
         if self.__body_bytes_length < 0x3f:    # short
-            self.__header_bytes = le2bytes((self.CODE << 6) + \
-                                           self.__body_bytes_length, 2)
+            self.__header_bytes = struct.pack('<H',
+                                              (self.CODE << 6) + \
+                                              self.__body_bytes_length)
         else:                           # long
-            self.__header_bytes = le2bytes((self.CODE << 6) + 0x3f, 2) + \
-                                  le2bytes(self.__body_bytes_length, 4)
+            self.__header_bytes = struct.pack('<HL',
+                                              (self.CODE << 6 + 0x3f),
+                                              self.__body_bytes_length)
 
         return self.__header_bytes
 
@@ -60,13 +62,10 @@ class SWFTagImage(SWFTagBase):
     @AttrAccessor
     def cid():
         def fget(self):
-            if self._body_bytes is not None:
-                return bytes2le(self._body_bytes[0:2])
+            if self._body_bytes is None:
+                return None
             else:
-                raise SWFTagBuildError(
-                    'Cannt build body. Not known image cid.'
-                    '(%s)' % self.__class__.__name__
-                    )
+                return bytes2le(self._body_bytes[0:2])
 
         def fset(self, cid):
             cid = cid or 0
@@ -141,9 +140,9 @@ class DefineBitsJPEG2(SWFTagImage):
 
         def fset(self, value):
             if isinstance(value, str):
-                self._body_bytes = self._body_bytes[:2] + \
-                                   struct.pack('BBBB', MARKER1, SOI, MARKER1, EOI) +\
-                                   value
+                self._body_bytes = struct.pack('2sBBBB',
+                                               self._body_bytes[:2],
+                                               MARKER1, SOI, MARKER1, EOI) + value
             else:
                 raise NotImplementedError
 

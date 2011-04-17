@@ -74,13 +74,11 @@ class SWF:
         if isinstance(io, str):
             io = StringIO(io)
 
-        self.signature = io.read(3)
-        self.version   = ord(io.read(1))
-        self.filesize  = bytes2le(io.read(4))
-
+        self.signature, self.version, self.filesize = struct.unpack('<3sBL',
+                                                                    io.read(8))
         self.frame_size  = StructRect(io)
-        self.frame_rate  = bytes2le(io.read(2)) / 0x100
-        self.frame_count = bytes2le(io.read(2))
+        self.frame_rate, self.frame_count = struct.unpack('<HH', io.read(4))
+        self.frame_rate /= 0x100
 
         # if self.is_compressed():
         #     body = io.read()
