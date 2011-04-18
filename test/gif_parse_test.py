@@ -289,7 +289,3 @@ class GIFParseTestCase(unittest.TestCase):
             (243,252,253),
             (255,255,254),
             (  0,  0,  0))
-
-        
-
-

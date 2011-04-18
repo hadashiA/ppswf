@@ -9,6 +9,41 @@ from cStringIO import StringIO
 class GIFParseError(Exception):
     """Raised when fairue gif parse"""
 
+class ImageBlock:
+    SEPARATER = 0x2c
+
+    def __init__(self, io):
+        self.left_pos, self.top_pos, self.width, self.height, self.flags = \
+          struct.unpack('<HHHHB', io.read(8))
+
+        if self.pallete_flag:
+            self.pallete_bytes = io.read(self.pallete_size * 3)
+
+        self.lzw_min_code_size, self.lzwdata_bytes_length = \
+          struct.unpack('BB', io.read(2))
+
+        self.lzwdata_bytes = io.read(self.data_bytes_length)
+        last = io.read(1)
+        if last != 0x00:
+            raise GIFParseError
+
+    @property
+    def pallete_flag(self):
+        return bool(self.flags >> 7)
+
+    @property
+    def interlace_flag(self):
+        return bool((self.flags >> 6) & 1)
+
+    @property
+    def sort_flag(self):
+        return bool((self.flags >> 5) & 1)
+
+    @property
+    def pallete_size(self):
+        return 2 ** ((self.flags & 0x7) + 1)
+        
+
 class GIF:
     __pallete_rgb = None
 
@@ -16,27 +51,21 @@ class GIF:
         if isinstance(io, str):
             io = StringIO(io)
 
-        self.signature, self.version, self.width, self.height = \
-          struct.unpack('<3s3sHH', io.read(10))
-
-        # self.flags = BitString(bytes=io.read(1))
-        self.flags = ord(io.read(1))
-
+        self.signature, self.version, self.width, self.height, \
+        self.flags, \
         self.bgcolor_index, self.pixcel_aspect_ratio = \
-          struct.unpack('BB', io.read(2))
+          struct.unpack('<3s3sHHBBB', io.read(13))
 
         if self.pallete_flag:
             self.pallete_bytes = io.read(self.pallete_size * 3)
-        else:
-            raise NotImplementedError
 
         self.blocks = []
-        # while True:
-        #     next_byte = io.read(1)
-        #     if next_byte == 0x3b:
-        #         return
-        #     elif next_byte == 0x2c:     # Imageblock
-        #         struct.unpack('<HHHH')
+        while True:
+            next_byte = io.read(1)
+            if next_byte == 0x3b or not next_byte:
+                return
+            elif next_byte == ImageBlock.SEPARATER:
+                self.blocks.append(ImageBlock(io))
                 
     @property
     def pallete_flag(self):
