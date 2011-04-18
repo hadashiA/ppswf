@@ -25,7 +25,7 @@ class ImageBlock:
         if self.pallete_flag:
             self.pallete_bytes = io.read(self.pallete_size * 3)
 
-        self.lzw_min_code_size = struct.unpack('B', io.read(1))
+        self.lzw_min_code_size = ord(io.read(1))
         self.lzwdata_bytes = DATA(io)
 
     @property

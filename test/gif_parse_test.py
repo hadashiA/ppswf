@@ -31,9 +31,17 @@ class GIFParseTestCase(unittest.TestCase):
         assert self.gif.sort_flag
         assert self.gif.pallete_size == 256
 
-    # def testParseImageBlock(self):
-    #     print self.gif.blocks
-    #     assert False
+    def testParseImageBlock(self):
+        image_block = self.gif.blocks[1]
+        print self.gif.blocks
+        print image_block.left_pos
+        print image_block.top_pos
+        print image_block.width
+        print image_block.height
+        print image_block.pallete_flag
+        print image_block.lzw_min_code_size
+        print len(image_block.lzwdata_bytes)
+        assert False
 
     def testParseColorPallete(self):
         assert self.gif.pallete_rgb() == (
