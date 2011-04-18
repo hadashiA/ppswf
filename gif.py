@@ -1,5 +1,5 @@
-import struct.pack, struct.unpack
-import math.log, math.ceil
+import struct
+import math
 from cStringIO import StringIO
 
 # from bitstring import BitString
@@ -10,6 +10,8 @@ class GIFParseError(Exception):
     """Raised when fairue gif parse"""
 
 class GIF:
+    __pallete_rgb = None
+
     def __init__(self, io):
         if isinstance(io, str):
             io = StringIO(io)
@@ -21,25 +23,24 @@ class GIF:
         self.flags = ord(io.read(1))
 
         self.bgcolor_index, self.pixcel_aspect_ratio = \
-          struct.unpack('<HH', io.read(2))
+          struct.unpack('BB', io.read(2))
 
-        if self.is_pallete_on:
-            self.pallete = io.read(self.pallete_size * 3)
+        if self.pallete_flag:
+            self.pallete_bytes = io.read(self.pallete_size * 3)
         else:
             raise NotImplementedError
 
         self.blocks = []
-        while True:
-            next_byte = io.read(1)
-            if next_byte == 0x3b:
-                return
-            elif next_byte == 0x2c:     # Imageblock
-                struct.unpack('<HHHH')
+        # while True:
+        #     next_byte = io.read(1)
+        #     if next_byte == 0x3b:
+        #         return
+        #     elif next_byte == 0x2c:     # Imageblock
+        #         struct.unpack('<HHHH')
                 
-
     @property
-    def is_pallete_on(self):
-        return bool(slef.flags >> 7)
+    def pallete_flag(self):
+        return bool(self.flags >> 7)
     # @AttrAccessor
     # def color_table_flag():
     #     def fget(self):
@@ -93,4 +94,14 @@ class GIF:
     #         self.flags &= value
     
     #     return locals()
+
+    def pallete_rgb(self):
+        if self.__pallete_rgb is not None:
+            return self.__pallete_rgb
+
+        numbers = struct.unpack('%dB' % self.pallete_size * 3, self.pallete_bytes)
+        self.__pallete_rgb = tuple(
+            numbers[i:i + 3] for i in range(0, (self.pallete_size * 3) - 1, 3)
+            )
+        return self.__pallete_rgb
             

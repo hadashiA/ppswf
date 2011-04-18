@@ -1,4 +1,4 @@
-import struct.pack, struct.unpack
+import struct
 
 from utils import AttrAccessor
 from jpeg import JPEG, MARKER1, SOI, EOI
