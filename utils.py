@@ -3,26 +3,14 @@ import struct
 def AttrAccessor(function):
     return property(**function())
 
-# def __fmt(bytes_length):
-#     if bytes_length == 2:
-#         return 'H'
-#     elif bytes_length == 4:
-#         return 'L'
-#     else:
-#         raise ValueError
+def rgb(pallete_bytes, pallete_size=None):
+    if pallete_size is None:
+        pallete_size = len(pallete_bytes)
+    else:
+        pallete_size *= 3
 
-# def bytes2le(bytes):
-#     "byte string to LittleEndian"
-#     return struct.unpack('<' + __fmt(len(bytes)), bytes)[0]
+    numbers = struct.unpack('%dB' % pallete_size, pallete_bytes)
+    return tuple(
+        numbers[i:i + 3] for i in range(0, pallete_size - 1, 3)
+        )
 
-# def le2bytes(i, length=4):
-#     "Little Endian to n bytes"
-#     return struct.pack('<' + __fmt(length), i)
-
-# def bytes2be(bytes):
-#     "byte string to BigEndian"
-#     return struct.unpack('>' + __fmt(len(bytes)), bytes)[0]
-
-# def be2bytes(i, length=4):
-#     "Big Endian to bytes"
-#     return struct.pack('>' + __fmt(length), i)

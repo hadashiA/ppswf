@@ -1,6 +1,8 @@
 import unittest
 import os
+import struct
 
+from utils import rgb
 from gif import GIF
 
 fixtures_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures')
@@ -40,7 +42,8 @@ class GIFParseTestCase(unittest.TestCase):
         assert not image_block.pallete_flag
 
     def testParseColorPallete(self):
-        assert self.gif.pallete_rgb() == (
+        image_block = self.gif.images[0]
+        assert rgb(image_block.pallete_bytes, image_block.pallete_size) == (
             ( 43, 80,121),
             ( 68, 68, 68),
             ( 75, 75, 75),
@@ -298,3 +301,27 @@ class GIFParseTestCase(unittest.TestCase):
             (255,255,254),
             (  0,  0,  0))
         
+
+class GIFOneColorParseTestCase(unittest.TestCase):
+    def setUp(self):
+        red_path = os.path.join(fixtures_dir, 'red.gif')
+        self.gif = GIF(open(red_path))
+        
+
+    def testParseOneColor(self):
+        assert len(self.gif.images) == 1
+        assert self.gif.width == 40
+        assert self.gif.height == 40
+
+        image_block = self.gif.images[0]
+        assert image_block.width == 40
+        assert image_block.height == 40
+        assert rgb(image_block.pallete_bytes) == (
+            (255, 0, 0),
+            (0, 0, 0)
+            )
+        
+    # def testParseLZW(self):
+    #     image_block = self.gif.images[0]
+    #     print struct.unpack('%dB' % len(image_block.lzwdata_bytes), image_block.lzwdata_bytes)
+    #     assert False

@@ -27,7 +27,11 @@ class ImageBlock:
           struct.unpack('<HHHHB', io.read(9))
 
         if self.pallete_flag:
-            self.__pallete_bytes = io.read(self.pallete_size * 3)
+            self.pallete_size  = 2 ** ((self.flags & 0x7) + 1)
+            self.pallete_bytes = io.read(self.pallete_size * 3)
+        else:
+            self.pallete_size  = gif.pallete_size
+            self.pallete_bytes = gif.pallete_bytes
 
         self.lzw_min_code_size = ord(io.read(1))
         self.lzwdata_bytes = DATA(io)
@@ -43,23 +47,6 @@ class ImageBlock:
     @property
     def sort_flag(self):
         return bool((self.flags >> 5) & 1)
-
-    @property
-    def pallete_size(self):
-        if self.pallete_flag:
-            return 2 ** ((self.flags & 0x7) + 1)
-        else:
-            return gif.pallete_size
-
-    @property
-    def pallete_bytes(self):
-        if self.pallete_flag:
-            return self.__pallete_bytes
-        else:
-            return gif.pallete_bytes
-
-    def pallete_rgb(self):
-        raise NotImplementedError
         
 class GraphicControlExtension:
     LABEL = 0xf9
@@ -145,14 +132,3 @@ class GIF:
     @property
     def pallete_size(self):
         return 2 ** ((self.flags & 0x7) + 1)
-
-    def pallete_rgb(self):
-        if self.__pallete_rgb is not None:
-            return self.__pallete_rgb
-
-        numbers = struct.unpack('%dB' % self.pallete_size * 3, self.pallete_bytes)
-        self.__pallete_rgb = tuple(
-            numbers[i:i + 3] for i in range(0, (self.pallete_size * 3) - 1, 3)
-            )
-        return self.__pallete_rgb
-            
