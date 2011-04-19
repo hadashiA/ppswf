@@ -113,7 +113,7 @@ class GIF:
           struct.unpack('<3s3sHHBBB', io.read(13))
 
         if self.pallete_flag:
-            self.__pallete_bytes = io.read(self.pallete_size * 3)
+            self.pallete_bytes = io.read(self.pallete_size * 3)
 
         self.blocks = []
         self.images = []
