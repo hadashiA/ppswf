@@ -1,7 +1,8 @@
 import struct
+from jpeg import JPEG, MARKER1, SOI, EOI
+from gif import GIF
 
 from utils import AttrAccessor
-from jpeg import JPEG, MARKER1, SOI, EOI
 
 class SWFTagBuildError(Exception):
     """Raised when fairue swf tag build"""
@@ -122,6 +123,32 @@ class DefineSound(SWFTagBase):
 
 class DefineBitsLossless(SWFTagImage):
     CODE = 20
+
+    def __init__(self, image=None, cid=None, **kwargs):
+        if image is not None:
+            self.cid   = cid
+            self.image = image
+        else:
+            super(DefineBitsLossless, self).__init__(**kwargs)
+
+    @AttrAccessor
+    def image():
+        def fget(self):
+            return self._body_bytes
+
+        def fset(self, value):
+            gif = GIF(value)
+            image = gif.images[0]
+            self._body_bytes = struct.pack('<HBHHB',
+                                           self.cid or 0,
+                                           3,
+                                           image.width,
+                                           image.height,
+                                           image.pallete_size - 1,
+                                           )
+            self._body_bytes += ''
+
+        return locals()
 
 class DefineBitsJPEG2(SWFTagImage):
     CODE = 21

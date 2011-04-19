@@ -11,19 +11,23 @@ def DATA(io):
     data = ''
     block_size = None
     while block_size != 0x00:
-        block_size = ord(io.read(1))
+        byte = io.read(1)
+        if not byte:
+            return data
+        block_size = ord(byte)
         data += io.read(block_size)
+        
     return data
 
 class ImageBlock:
     SEPARATER = 0x2c
 
-    def __init__(self, io):
+    def __init__(self, io, gif):
         self.left_pos, self.top_pos, self.width, self.height, self.flags = \
           struct.unpack('<HHHHB', io.read(9))
 
         if self.pallete_flag:
-            self.pallete_bytes = io.read(self.pallete_size * 3)
+            self.__pallete_bytes = io.read(self.pallete_size * 3)
 
         self.lzw_min_code_size = ord(io.read(1))
         self.lzwdata_bytes = DATA(io)
@@ -42,7 +46,20 @@ class ImageBlock:
 
     @property
     def pallete_size(self):
-        return 2 ** ((self.flags & 0x7) + 1)
+        if self.pallete_flag:
+            return 2 ** ((self.flags & 0x7) + 1)
+        else:
+            return gif.pallete_size
+
+    @property
+    def pallete_bytes(self):
+        if self.pallete_flag:
+            return self.__pallete_bytes
+        else:
+            return gif.pallete_bytes
+
+    def pallete_rgb(self):
+        raise NotImplementedError
         
 class GraphicControlExtension:
     LABEL = 0xf9
@@ -96,15 +113,20 @@ class GIF:
           struct.unpack('<3s3sHHBBB', io.read(13))
 
         if self.pallete_flag:
-            self.pallete_bytes = io.read(self.pallete_size * 3)
+            self.__pallete_bytes = io.read(self.pallete_size * 3)
 
         self.blocks = []
+        self.images = []
         while True:
             next_byte = ord(io.read(1))
             if next_byte == 0x3b:
                 return
+
             elif next_byte == ImageBlock.SEPARATER:
-                self.blocks.append(ImageBlock(io))
+                image_block = ImageBlock(io, self)
+                self.blocks.append(image_block)
+                self.images.append(image_block)
+
             elif next_byte == EXTENSION_INTRODUCER:
                 self.blocks.append(Extension(io))
                 
