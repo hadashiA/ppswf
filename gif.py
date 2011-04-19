@@ -20,43 +20,45 @@ def DATA(io):
     return data
 
 class LZWDict:
-    def __init__(self, table_size):
-        self.table_size = table_size
-        self.dict = [(None, chr(i)) for i in range(table_size)]
+    def __init__(self, kinds_count):
+        self.kinds_count = kinds_count
+        self.codes = [(None, i) for i in range(kinds_count)]
 
-        self.clear_code = table_size
-        self.dict.append(None)          # clear code
+        self.clear_code = kinds_count
+        self.codes.append(None)          # clear code
 
-        self.end_code = table_size + 1
-        self.dict.append(None)          # end code
+        self.end_code = kinds_count + 1
+        self.codes.append(None)          # end code
 
-        self.codes = {}
+        self.extra_codes = {}
 
     def clear(self):
-        self.dict[self.end_code + 1:] = []
-        self.codes = {}
+        self.codes[self.end_code + 1:] = []
+        self.extra_codes = {}
         
     def __len__(self):
-        return len(self.dict)
+        return len(self.codes)
 
     def __getitem__(self, pair):
-        prev_byte, byte = pair
-        if prev_byte:
-            return self.codes[prev_byte + byte]
+        if pair[0] is None:
+            return pair[1]
         else:
-            return ord(byte)
+            return self.extra_codes[pair]
 
-    def append(self, prev_byte, byte):
-        new_code = len(self.dict)
-        self.codes[(prev_byte, byte)] = new_code
-        self.dict.append((prev_byte, byte))
+    def __iter__(self):
+        return iter(self.codes)
+
+    def append(self, pair):
+        new_code = len(self.codes)
+        self.extra_codes[pair] = new_code
+        self.codes.append(pair)
 
     def build(self, code):
-        prev_byte, byte = self.dict[code]
-        if prev_byte:
-            return self.build(prev_byte) + byte
+        code_1, code_2 = self.codes[code]
+        if code_1:
+            return self.build(code_1).append(code_2)
         else:
-            return byte
+            return [code_2]
     
 
 class ImageBlock:
@@ -90,27 +92,31 @@ class ImageBlock:
 
     # GIF LZW decode
     def pixels(self):
-        lzw_dict = LZWDict(self.palelte_size)
+        result = []
+
+        lzw_dict = LZWDict(self.pallete_size)
         bits = BitString(bytes=self.lzwdata_bytes)
 
         code_size = self.lzw_min_code_size + 1
 
-        prev_byte = None
+        prev_code = None
         i = 0
         while i < len(bits):
             code = bits[i: i + code_size].uint
             if code == lzw_dict.clear_code:
                 lzw_dict.clear()
                 code_size = self.lzw_min_code_size + 1
-
             elif code == lzw_dict.end_code:
                 break
+            else:
+                if code >= len(lzw_dict):
+                    lzw_dict.append((prev_code, code))
+                result += lzw_dict.build(code)
 
-            elif lzw_dict[(prev, )]
-
+            prev_code = code
             i += code_size
 
-        return self.lzwdata_bytes
+        return result
         
 class GraphicControlExtension:
     LABEL = 0xf9
