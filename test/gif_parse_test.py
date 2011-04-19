@@ -321,7 +321,8 @@ class GIFOneColorParseTestCase(unittest.TestCase):
             (0, 0, 0)
             )
         
-    # def testParseLZW(self):
-    #     image_block = self.gif.images[0]
-    #     print struct.unpack('%dB' % len(image_block.lzwdata_bytes), image_block.lzwdata_bytes)
-    #     assert False
+    def testParseLZW(self):
+        image_block = self.gif.images[0]
+        print len(image_block.lzwdata_bytes)
+        print struct.unpack('%dB' % len(image_block.lzwdata_bytes), image_block.lzwdata_bytes)
+        assert False
