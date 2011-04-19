@@ -2,6 +2,8 @@ import unittest
 import os
 import struct
 
+from bitstring import BitString
+
 from utils import rgb
 from gif import GIF
 
@@ -325,5 +327,6 @@ class GIFOneColorParseTestCase(unittest.TestCase):
         image_block = self.gif.images[0]
         # print len(image_block.lzwdata_bytes)
         # print struct.unpack('%dB' % len(image_block.lzwdata_bytes), image_block.lzwdata_bytes)
+        print BitString(bytes=image_block.lzwdata_bytes).bin
         print image_block.pixels()
         assert False

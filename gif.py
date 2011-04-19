@@ -109,7 +109,9 @@ class ImageBlock:
             elif code == lzw_dict.end_code:
                 break
             else:
-                if code >= len(lzw_dict):
+                print code, lzw_dict.codes
+                # if code >= len(lzw_dict):
+                if (prev_code, code) not in lzw_dict:
                     lzw_dict.append((prev_code, code))
                 result += lzw_dict.build(code)
 
