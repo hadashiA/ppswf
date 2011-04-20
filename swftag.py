@@ -1,4 +1,6 @@
 import struct
+import zlib
+
 from jpeg import JPEG, MARKER1, SOI, EOI
 from gif import GIF
 
@@ -66,11 +68,11 @@ class SWFTagImage(SWFTagBase):
 
         def fset(self, cid):
             self.__cid = cid or 0
+            packed_cid = struct.pack('<H', self.__cid)
             if self._body_bytes is None:
-                self._body_bytes, = struct.unpack('<H', self.__cid)
+                self._body_bytes = packed_cid
             else:
-                self._body_bytes = struct.unpack('<H', self.__cid)[0] + \
-                                   self.body_bytes[2:]
+                self._body_bytes = packed_cid + self._body_bytes[2:]
 
         return locals()
 
@@ -124,6 +126,8 @@ class DefineSound(SWFTagBase):
 class DefineBitsLossless(SWFTagImage):
     CODE = 20
 
+    __image = None
+
     def __init__(self, image=None, cid=None, **kwargs):
         if image is not None:
             self.cid   = cid
@@ -134,19 +138,21 @@ class DefineBitsLossless(SWFTagImage):
     @AttrAccessor
     def image():
         def fget(self):
-            return self._body_bytes
+            return self.__image
 
         def fset(self, value):
             gif = GIF(value)
-            image = gif.images[0]
+            image_block = gif.images[0]
             self._body_bytes = struct.pack('<HBHHB',
                                            self.cid or 0,
                                            3,
-                                           image.width,
-                                           image.height,
-                                           image.pallete_size - 1,
+                                           image_block.width,
+                                           image_block.height,
+                                           image_block.pallete_size - 1,
                                            )
-            self._body_bytes += ''
+            self._body_bytes += zlib.compress(
+                image_block.pallete_bytes + image_block.pixel_bytes()
+                )
 
         return locals()
 

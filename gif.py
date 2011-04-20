@@ -160,13 +160,16 @@ class ImageBlock:
                     data = prev_data + prev_data[0:1]
                 result += data
                 lzw_dict.append((prev_code, data[0]))
-                print code, lzw_dict.codes
                 prev_code, prev_data = code, data
 
             if len(lzw_dict) >= (1 << code_size) and code_size < 12:
                 code_size += 1
 
         return result
+
+    def pixel_bytes(self):
+        l = self.pixels()
+        return struct.pack('%dB' % len(l), *l)
         
 class GraphicControlExtension:
     LABEL = 0xf9
