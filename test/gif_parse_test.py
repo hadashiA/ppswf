@@ -325,8 +325,9 @@ class GIFOneColorParseTestCase(unittest.TestCase):
         
     def testParseLZW(self):
         image_block = self.gif.images[0]
-        # print len(image_block.lzwdata_bytes)
-        # print struct.unpack('%dB' % len(image_block.lzwdata_bytes), image_block.lzwdata_bytes)
-        # 0b100001001000111110101001110010111110110100001111101000111001110010110100110110101000101110110011110111101011110011111011000011111000011011100010010010001001011011100110100010011010011011101010110010101011011011101110000010111100011111110010010011001101011111110110100011011110011111111010110011100010001100000101
         print image_block.pixels()
         assert list(set(image_block.pixels())) == [0]
+
+class GifGogopherParseTestCase(unittest.TestCase):
+    def setUp(self):
+        gif_path = os.path.join(fixtures_dir, 'gogopher.gif')

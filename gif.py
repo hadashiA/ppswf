@@ -144,7 +144,7 @@ class ImageBlock:
         while True:
             code = bits.read(code_size)
 
-            if code == lzw_dict.end_code:
+            if code is None or code == lzw_dict.end_code:
                 break
 
             elif code == lzw_dict.clear_code:
@@ -228,7 +228,10 @@ class GIF:
         self.blocks = []
         self.images = []
         while True:
-            next_byte = ord(io.read(1))
+            next_byte = io.read(1)
+            if not next_byte:
+                return
+            next_byte = ord(next_byte)
             if next_byte == 0x3b:
                 return
 

@@ -8,6 +8,8 @@ sys.path.append(root_dir)
 swf_path  = os.path.join(fixtures_dir, 'orz.swf')
 jpeg_path = os.path.join(fixtures_dir, 'gogopher_2.jpg')
 red_path  = os.path.join(fixtures_dir, 'red.gif')
+# gif_path  = os.path.join(fixtures_dir, 'gogopher.gif')
+gif_path  = os.path.join(fixtures_dir, 'sample.gif')
 
 # sys.path.append(os.path.expanduser('~/dev/naraku'))
 
@@ -29,9 +31,8 @@ def main():
 
     # swf.images[1] = jpeg_tag
 
-    red_tag = swftag.DefineBitsLossless(open(red_path))
-    swf.images[1] = red_tag
-    
+    gif_tag = swftag.DefineBitsLossless(open(gif_path))
+    swf.images[1] = gif_tag
 
     out_dir = os.path.expanduser('~/tmp')
     open(os.path.join(out_dir, 'orz2.swf'), 'w').write(swf.build())
