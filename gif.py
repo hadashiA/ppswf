@@ -99,10 +99,14 @@ class ImageBlock:
 
         code_size = self.lzw_min_code_size + 1
 
+        bits.readbits(code_size)
         prev_code = None
-        i = 0
-        while i < len(bits):
-            code = bits[i: i + code_size].uint
+        while True:
+            code = bits.readbits(code_size)
+            if not code:
+                break
+            code = code.uint
+
             if code == lzw_dict.clear_code:
                 lzw_dict.clear()
                 code_size = self.lzw_min_code_size + 1
@@ -116,7 +120,9 @@ class ImageBlock:
                 result += lzw_dict.build(code)
 
             prev_code = code
-            i += code_size
+
+            if bits.tell() >= (2 ** code_size) and code_size < 12:
+                code_size += 1
 
         return result
         
