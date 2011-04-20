@@ -59,11 +59,9 @@ class LZWDict:
 
         code_1, code_2 = self.codes[code]
         if code_1 is not None:
-            result = self.build(code_1)
-            result.append(code_2)
-            return result
+            return self.build(code_1) + chr(code_2)
         else:
-            return [code_2]
+            return chr(code_2)
     
 # 10000100  #=> 100, 000, 10?
 class LZWBitStream:
@@ -128,8 +126,8 @@ class ImageBlock:
         return bool((self.flags >> 5) & 1)
 
     # GIF LZW decode
-    def pixels(self):
-        result = []
+    def pixel_bytes(self):
+        result = ''
 
         code_size = self.lzw_min_code_size + 1
 
@@ -137,7 +135,7 @@ class ImageBlock:
         bits     = LZWBitStream(self.lzwdata_bytes)
 
         prev_code = None
-        prev_data = []
+        prev_data = ''
 
         code_size = self.lzw_min_code_size + 1
 
@@ -157,19 +155,15 @@ class ImageBlock:
             else:
                 data = lzw_dict.build(code)
                 if data is None:
-                    data = prev_data + prev_data[0:1]
+                    data = prev_data + prev_data[0]
                 result += data
-                lzw_dict.append((prev_code, data[0]))
+                lzw_dict.append((prev_code, ord(data[0])))
                 prev_code, prev_data = code, data
 
             if len(lzw_dict) >= (1 << code_size) and code_size < 12:
                 code_size += 1
 
         return result
-
-    def pixel_bytes(self):
-        l = self.pixels()
-        return struct.pack('%dB' % len(l), *l)
         
 class GraphicControlExtension:
     LABEL = 0xf9
