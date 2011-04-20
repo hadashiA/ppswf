@@ -20,14 +20,14 @@ def DATA(io):
     return data
 
 class LZWDict:
-    def __init__(self, kinds_count):
-        self.kinds_count = kinds_count
-        self.codes = [(None, i) for i in range(kinds_count)]
+    def __init__(self, bits_length):
+        dict_size = 1 << bits_length
+        self.codes = [(None, i) for i in range(dict_size)]
 
-        self.clear_code = kinds_count
+        self.clear_code = dict_size
         self.codes.append(None)          # clear code
 
-        self.end_code = kinds_count + 1
+        self.end_code = dict_size + 1
         self.codes.append(None)          # end code
 
         self.extra_codes = {}
@@ -55,11 +55,45 @@ class LZWDict:
 
     def build(self, code):
         code_1, code_2 = self.codes[code]
-        if code_1:
-            return self.build(code_1).append(code_2)
+        if code_1 is not None:
+            result = self.build(code_1)
+            result.append(code_2)
+            return result
         else:
             return [code_2]
     
+# 10000100  #=> 100, 000, 10?
+class LZWBitStream:
+    def __init__(self, io):
+        if isinstance(io, str):
+            self.__io = StringIO(io)
+        else:
+            self.__io = io
+
+        self.__buf = 0
+        self.__buf_bits_length = 0
+        self.__pos = 0
+
+    def read(self, length):
+        bit_mask = (1 << length) - 1
+
+        while self.__buf_bits_length < length:
+            byte = self.__io.read(1)
+            if not byte:
+                return None
+            byte = ord(byte)
+            self.__buf |= (byte << self.__buf_bits_length)
+            self.__buf_bits_length += 8
+
+        result = (bit_mask & self.__buf)
+        self.__buf >>= length
+        self.__buf_bits_length -= length
+
+        self.__pos += length
+        return result
+    
+    def tell(self):
+        return self.__pos
 
 class ImageBlock:
     SEPARATER = 0x2c
@@ -94,18 +128,14 @@ class ImageBlock:
     def pixels(self):
         result = []
 
-        lzw_dict = LZWDict(self.pallete_size)
-        bits = BitString(bytes=self.lzwdata_bytes)
-
         code_size = self.lzw_min_code_size + 1
 
-        bits.readbits(code_size)
+        lzw_dict = LZWDict(self.lzw_min_code_size)
+        bits     = LZWBitStream(self.lzwdata_bytes)
+
         prev_code = None
         while True:
-            code = bits.readbits(code_size)
-            if not code:
-                break
-            code = code.uint
+            code = bits.read(code_size)
 
             if code == lzw_dict.clear_code:
                 lzw_dict.clear()
@@ -113,15 +143,13 @@ class ImageBlock:
             elif code == lzw_dict.end_code:
                 break
             else:
-                print code, lzw_dict.codes
                 # if code >= len(lzw_dict):
                 if (prev_code, code) not in lzw_dict:
                     lzw_dict.append((prev_code, code))
                 result += lzw_dict.build(code)
+                prev_code = code
 
-            prev_code = code
-
-            if bits.tell() >= (2 ** code_size) and code_size < 12:
+            if len(lzw_dict) >= (1 << code_size) and code_size < 12:
                 code_size += 1
 
         return result
