@@ -54,6 +54,9 @@ class LZWDict:
         self.codes.append(pair)
 
     def build(self, code):
+        if code >= len(self.codes):
+            return None
+
         code_1, code_2 = self.codes[code]
         if code_1 is not None:
             result = self.build(code_1)
@@ -134,20 +137,31 @@ class ImageBlock:
         bits     = LZWBitStream(self.lzwdata_bytes)
 
         prev_code = None
+        prev_data = []
+
+        code_size = self.lzw_min_code_size + 1
+
         while True:
             code = bits.read(code_size)
 
-            if code == lzw_dict.clear_code:
+            if code == lzw_dict.end_code:
+                break
+
+            elif code == lzw_dict.clear_code:
                 lzw_dict.clear()
                 code_size = self.lzw_min_code_size + 1
-            elif code == lzw_dict.end_code:
-                break
+                prev_code = bits.read(code_size)
+                prev_data = lzw_dict.build(prev_code)
+                result += prev_data
+
             else:
-                # if code >= len(lzw_dict):
-                if (prev_code, code) not in lzw_dict:
-                    lzw_dict.append((prev_code, code))
-                result += lzw_dict.build(code)
-                prev_code = code
+                data = lzw_dict.build(code)
+                if data is None:
+                    data = prev_data + prev_data[0:1]
+                result += data
+                lzw_dict.append((prev_code, data[0]))
+                print code, lzw_dict.codes
+                prev_code, prev_data = code, data
 
             if len(lzw_dict) >= (1 << code_size) and code_size < 12:
                 code_size += 1
