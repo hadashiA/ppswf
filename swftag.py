@@ -142,6 +142,7 @@ class DefineBitsLossless(SWFTagImage):
 
         def fset(self, value):
             gif = GIF(value)
+            self.__image = gif
             image_block = gif.images[0]
             self._body_bytes = struct.pack('<HBHHB',
                                            self.cid or 0,
@@ -151,7 +152,7 @@ class DefineBitsLossless(SWFTagImage):
                                            image_block.pallete_size - 1,
                                            )
             self._body_bytes += zlib.compress(
-                image_block.pallete_bytes + image_block.pixel_bytes()
+                image_block.pallete_bytes + image_block.indices()
                 )
 
         return locals()

@@ -129,7 +129,7 @@ class ImageBlock:
         return bool((self.flags >> 5) & 1)
 
     # GIF LZW decode
-    def pixel_bytes(self):
+    def indices_bytes(self):
         result = ''
 
         code_size = self.lzw_min_code_size + 1

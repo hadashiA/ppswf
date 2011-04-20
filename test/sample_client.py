@@ -8,8 +8,8 @@ sys.path.append(root_dir)
 swf_path  = os.path.join(fixtures_dir, 'orz.swf')
 jpeg_path = os.path.join(fixtures_dir, 'gogopher_2.jpg')
 red_path  = os.path.join(fixtures_dir, 'red.gif')
-gif_path  = os.path.join(fixtures_dir, 'gogopher.gif')
-gif_path = os.path.expanduser('~/tmp/unko.gif')
+# gif_path  = os.path.join(fixtures_dir, 'gogopher.gif')
+gif_path  = os.path.expanduser('~/tmp/unko40x40.gif')
 # sys.path.append(os.path.expanduser('~/dev/naraku'))
 
 from ppswf import SWF

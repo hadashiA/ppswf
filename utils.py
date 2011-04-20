@@ -3,14 +3,21 @@ import struct
 def AttrAccessor(function):
     return property(**function())
 
-def rgb(pallete_bytes, pallete_size=None):
-    if pallete_size is None:
-        pallete_size = len(pallete_bytes)
+def rgb(rgb_bytes, size=None):
+    if size is None:
+        size = len(pallete_bytes)
     else:
-        pallete_size *= 3
+        size *= 3
 
-    numbers = struct.unpack('%dB' % pallete_size, pallete_bytes)
+    numbers = struct.unpack('%dB' % size, rgb_bytes)
     return tuple(
-        numbers[i:i + 3] for i in range(0, pallete_size - 1, 3)
+        numbers[i:i + 3] for i in range(0, size - 1, 3)
         )
 
+
+def indices(bytes, bytes_length=None):
+    if bytes_length is None:
+        bytes_length = len(bytes)
+
+    return struct.unpack('%dB' % bytes_length, bytes)
+    
