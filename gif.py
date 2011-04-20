@@ -213,7 +213,7 @@ class GIF:
 
         self.signature, self.version, self.width, self.height, \
         self.flags, \
-        self.bgcolor_index, self.pixcel_aspect_ratio = \
+        self.bgcolor_index, self.aspect_ratio = \
           struct.unpack('<3s3sHHBBB', io.read(13))
 
         if self.pallete_flag:
