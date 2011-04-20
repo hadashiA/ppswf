@@ -7,6 +7,9 @@ from bitstring import BitString
 class GIFParseError(Exception):
     """Raised when fairue gif parse"""
 
+EXTENSION_INTRODUCER = 0x21
+EXTENSION_END = 0x00
+
 def DATA(io):
     data = ''
     block_size = None
@@ -176,7 +179,7 @@ class GraphicControlExtension:
         self.flags, self.delay_time, self.transparent_color_index, end = \
           struct.unpack('<BHBB', io.read(5))
 
-        if end != 0x00:
+        if end != EXTENSION_END:
             raise GIFParseError
 
 # class CommentExtension:
@@ -185,17 +188,24 @@ class GraphicControlExtension:
 #     def __init__(self, io):
 #         pass
 
+class ApplicationExtension:
+    LABEL = 0xff
+
+    def __init__(self, io):
+        self.block_size = ord(io.read(1))
+        if self.block_size != 0x0b:
+            raise GIFParseError
+
+        self.identifier, self.authentication_code = struct.unpack('8s3s', io.read(11))
+        self.data = DATA(io)
+
 class UnknownExtension:
     def __init__(self, io):
         byte = None
-        while byte != 0x00:
+        while byte != EXTENSION_END:
             byte = ord(io.read(1))
 
-EXTENSION_INTRODUCER = 0x21
-EXTENSION_END = 0x00
-
-# extension_types = [GraphicControlExtension, CommentExtension]
-extension_types = [GraphicControlExtension]
+extension_types = [GraphicControlExtension, ApplicationExtension]
 extension_types_for_label = dict((extension_type.LABEL, extension_type)
                                  for extension_type in extension_types)
 
