@@ -8,10 +8,10 @@ import utils
 from png import PNG
 
 fixtures_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures')
-png_path = os.path.join(fixtures_dir, 'gogopher.png')
 
-class PNGParseTestCase(unittest.TestCase):
+class PNGColorType3ParseTestCase(unittest.TestCase):
     def setUp(self):
+        png_path = os.path.join(fixtures_dir, 'gogopher.png')
         self.png = PNG(open(png_path))
 
     def testParseIHDR(self):
@@ -122,3 +122,22 @@ class PNGParseTestCase(unittest.TestCase):
             ( 53, 52, 58),
             (199,197,208),
             )
+
+    def testXRGBBytes(self):
+        d = {}
+        # for xrgb in utils.rgba(self.png.build_xrgb()):
+        #     if not d.has_key(xrgb):
+        #         d[xrgb] = 0
+        #     d[xrgb] += 1
+        pallete = utils.rgb(self.png.pallete_bytes)
+        for index in map(ord, self.png.indices_bytes):
+            rgb = pallete[index]
+            if not d.has_key(rgb):
+                d[rgb] = 0
+            d[rgb] += 1
+
+        for k, v in sorted(d.items(), cmp=lambda a,b:cmp(b,a), key=lambda x:x[1]):
+            print str(k).rjust(11), v
+        # print len(self.png.indices_bytes)
+
+        assert False

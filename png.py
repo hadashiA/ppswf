@@ -1,6 +1,8 @@
 import struct
 from cStringIO import StringIO
 
+import utils
+
 class PNGParseError:
     """Raised when cannt png parse"""
 
@@ -37,9 +39,21 @@ class PNG:
         self.pallete_bytes = data
 
     def IDAT(self, data):
-        if not hasattr(self, 'indices_bytes'):
-            self.indices_bytes = ''
-        self.indices_bytes += data.decode('zlib')
+        self.indices_bytes = data.decode('zlib')
 
     def IEND(self, data):
         pass
+
+    def tRNS(self, data):
+        self.alpha_pallete_bytes = data
+            
+    def build_xrgb(self):
+        # using pallete
+        if self.color_type == 3:
+            result = ''
+            for byte in self.indices_bytes:
+                i = ord(byte) * 3
+                result += '\x00' + self.pallete_bytes[i:i+3]
+            return result
+        else:
+            raise NotImplementedError

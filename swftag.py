@@ -3,6 +3,7 @@ import zlib
 
 from jpeg import JPEG, MARKER1, SOI, EOI
 from gif import GIF
+from png import PNG
 
 from utils import AttrAccessor, adjust_indices_bytes
 
@@ -153,9 +154,20 @@ class DefineBitsLossless(SWFTagImage):
                                                )
                 self._body_bytes += zlib.compress(
                     image_block.pallete_bytes + \
-                    adjust_indices_bytes(image_block.indices_bytes, image_block.width))
+                    adjust_indices_bytes(image_block.indices_bytes,
+                                         image_block.width))
+            elif isinstance(value, PNG):
+                self.__image = value
+                self._body_bytes = struct.pack('<HBHH',
+                                               self.cid or 0,
+                                               5,
+                                               value.width,
+                                               value.height,
+                                               )
+                self._body_bytes += zlib.compress(value.build_xrgb())
+
             else:
-                raise NotImplementedError
+                raise ValueError
 
         return locals()
 
