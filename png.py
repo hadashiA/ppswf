@@ -39,8 +39,7 @@ class PNG:
     def IDAT(self, data):
         if not hasattr(self, 'indices_bytes'):
             self.indices_bytes = ''
-
-        self.indices_bytes += data
+        self.indices_bytes += data.decode('zlib')
 
     def IEND(self, data):
         pass

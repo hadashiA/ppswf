@@ -153,8 +153,7 @@ class DefineBitsLossless(SWFTagImage):
                                                )
                 self._body_bytes += zlib.compress(
                     image_block.pallete_bytes + \
-                    adjust_indices_bytes(image_block.indices_bytes(),
-                                         image_block.width))
+                    adjust_indices_bytes(image_block.indices_bytes, image_block.width))
             else:
                 raise NotImplementedError
 

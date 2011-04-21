@@ -129,6 +129,7 @@ class ImageBlock:
         return bool((self.flags >> 5) & 1)
 
     # GIF LZW decode
+    @property
     def indices_bytes(self):
         result = ''
 
