@@ -8,11 +8,12 @@ sys.path.append(root_dir)
 swf_path  = os.path.join(fixtures_dir, 'orz.swf')
 jpeg_path = os.path.join(fixtures_dir, 'gogopher_2.jpg')
 red_path  = os.path.join(fixtures_dir, 'red.gif')
-# gif_path  = os.path.join(fixtures_dir, 'gogopher.gif')
-gif_path  = os.path.expanduser('~/tmp/unko.gif')
+gif_path  = os.path.join(fixtures_dir, 'gogopher.gif')
+# gif_path  = os.path.expanduser('~/tmp/unko.gif')
 # sys.path.append(os.path.expanduser('~/dev/naraku'))
 
 from ppswf import SWF
+from ppswf.gif import GIF
 from ppswf import swftag
 
 def main():
@@ -30,8 +31,7 @@ def main():
 
     # swf.images[1] = jpeg_tag
 
-    gif_tag = swftag.DefineBitsLossless(open(gif_path))
-    swf.images[1] = gif_tag
+    swf.images[1] = GIF(open(gif_path))
 
     out_dir = os.path.expanduser('~/tmp')
     open(os.path.join(out_dir, 'orz2.swf'), 'w').write(swf.build())

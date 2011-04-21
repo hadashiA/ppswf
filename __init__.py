@@ -7,6 +7,7 @@ from bitstring import BitString
 
 import swftag
 from swftag import SWFTag
+from gif import GIF
 
 class SWFParseError(Exception):
     """Raised when fairue swf binary parse"""
@@ -49,11 +50,25 @@ class SWFImages:
 
     def __setitem__(self, cid, new_tag):
         self.__tags_for_cid_cache = None
+        index = None
         for i, tag in enumerate(self.owner.tags):
             if hasattr(tag, 'cid') and tag.cid == cid:
-                new_tag.cid = cid
-                self.owner.tags[i] = new_tag
-                return
+                index = i
+                break
+
+        if index is None:
+            raise KeyError
+
+        if issubclass(new_tag.__class__, swftag.SWFTagBase):
+            pass
+        elif isinstance(new_tag, GIF):
+            new_tag = swftag.DefineBitsLossless(new_tag, cid=cid)
+        elif isinstance(new_tag, JPEG):
+            new_tag = swftag.DefineBitsJPEG2(new_tag, cid=cid)
+        else:
+            raise ValueError
+
+        self.owner.tags[index] = new_tag
 
     def __tags_for_cid(self):
         if self.__tags_for_cid_cache is None:

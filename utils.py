@@ -5,7 +5,7 @@ def AttrAccessor(function):
 
 def rgb(rgb_bytes, size=None):
     if size is None:
-        size = len(pallete_bytes)
+        size = len(rgb_bytes)
     else:
         size *= 3
 
@@ -29,3 +29,10 @@ def adjust_indices_bytes(pallete_bytes, width):
     for i in range(0, len(pallete_bytes), width):
         result += pallete_bytes[i:i+width] + ('\0' * gap)
     return result
+
+def image_type(io_or_bytes):
+    if isinstance(io_or_bytes, str):
+        magic = io_or_bytes[:3]
+    else:
+        magic = io_or_bytes.read(3)
+        io_or_bytes.seek(-3, 1)

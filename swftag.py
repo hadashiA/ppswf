@@ -141,19 +141,22 @@ class DefineBitsLossless(SWFTagImage):
             return self.__image
 
         def fset(self, value):
-            gif = GIF(value)
-            self.__image = gif
-            image_block = gif.images[0]
-            self._body_bytes = struct.pack('<HBHHB',
-                                           self.cid or 0,
-                                           3,
-                                           image_block.width,
-                                           image_block.height,
-                                           image_block.pallete_size - 1,
-                                           )
-            self._body_bytes += zlib.compress(
-                image_block.pallete_bytes + \
-                adjust_indices_bytes(image_block.indices_bytes(), image_block.width))
+            if isinstance(value, GIF):
+                self.__image = value
+                image_block = value.images[0]
+                self._body_bytes = struct.pack('<HBHHB',
+                                               self.cid or 0,
+                                               3,
+                                               image_block.width,
+                                               image_block.height,
+                                               image_block.pallete_size - 1,
+                                               )
+                self._body_bytes += zlib.compress(
+                    image_block.pallete_bytes + \
+                    adjust_indices_bytes(image_block.indices_bytes(),
+                                         image_block.width))
+            else:
+                raise NotImplementedError
 
         return locals()
 
@@ -172,14 +175,13 @@ class DefineBitsJPEG2(SWFTagImage):
         def fget(self):
             return self._body_bytes
 
-        def fset(self, value):
-            if isinstance(value, str):
-                self._body_bytes = struct.pack('<HBBBB',
-                                               self.cid or 0,
-                                               MARKER1, SOI, MARKER1, EOI
-                                               ) + value
-            else:
-                raise NotImplementedError
+        def fset(self, jpeg):
+            if isinstance(jpeg, JPEG):
+                jpeg = jpeg.build()
+            self._body_bytes = struct.pack('<HBBBB',
+                                           self.cid or 0,
+                                           MARKER1, SOI, MARKER1, EOI
+                                           ) + jpeg
 
         return locals()
 
