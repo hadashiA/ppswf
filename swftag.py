@@ -4,7 +4,7 @@ import zlib
 from jpeg import JPEG, MARKER1, SOI, EOI
 from gif import GIF
 
-from utils import AttrAccessor
+from utils import AttrAccessor, adjust_indices_bytes
 
 class SWFTagBuildError(Exception):
     """Raised when fairue swf tag build"""
@@ -152,8 +152,8 @@ class DefineBitsLossless(SWFTagImage):
                                            image_block.pallete_size - 1,
                                            )
             self._body_bytes += zlib.compress(
-                image_block.pallete_bytes + image_block.indices()
-                )
+                image_block.pallete_bytes + \
+                adjust_indices_bytes(image_block.indices_bytes(), image_block.width))
 
         return locals()
 

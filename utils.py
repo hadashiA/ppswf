@@ -20,4 +20,12 @@ def indices(bytes, bytes_length=None):
         bytes_length = len(bytes)
 
     return struct.unpack('%dB' % bytes_length, bytes)
+
+def adjust_indices_bytes(pallete_bytes, width):
+    result = ""
     
+    alex_width = (width + 3) & -4
+    gap = alex_width - width
+    for i in range(0, len(pallete_bytes), width):
+        result += pallete_bytes[i:i+width] + ('\0' * gap)
+    return result
