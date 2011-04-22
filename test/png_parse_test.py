@@ -1,6 +1,7 @@
 import unittest
 import os
 import struct
+from array import array
 
 from bitstring import BitString
 
@@ -127,16 +128,13 @@ class PNGColorType3ParseTestCase(unittest.TestCase):
         print self.png.width
         print self.png.height
         print self.png.color_type
-        print len(self.png.indices_bytes)
-        print utils.rgb(self.png.pallete_bytes)
-        # print utils.indices(self.png.indices_bytes)
+        print len(self.png.build_xrgb()) / 4.0
         d = {}
-        pallete = utils.rgb(self.png.pallete_bytes)
-        for index in map(ord, self.png.indices_bytes):
-            rgb = pallete[index]
-            if not d.has_key(rgb):
-                d[rgb] = 0
-            d[rgb] += 1
+        for xrgb in utils.rgba(self.png.build_xrgb()):
+            xrgb = tuple(xrgb)
+            if not d.has_key(xrgb):
+                d[xrgb] = 0
+            d[xrgb] += 1
 
         for k, v in sorted(d.items(), cmp=lambda a,b:cmp(b,a), key=lambda x:x[1]):
             print str(k).rjust(11), v

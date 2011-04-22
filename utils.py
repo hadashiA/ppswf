@@ -19,7 +19,7 @@ def rgb(rgb_bytes, size=None):
 def rgba(rgba_bytes):
     size = len(rgba_bytes)
     numbers = array('B')
-    array.fromstring(rgba_bytes)
+    numbers.fromstring(rgba_bytes)
     return tuple(
         numbers[i:i+4] for i in range(0, size - 1, 4)
         )

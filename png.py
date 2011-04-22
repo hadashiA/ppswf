@@ -1,5 +1,4 @@
 import struct
-import zlib
 from cStringIO import StringIO
 
 import utils
@@ -40,13 +39,9 @@ class PNG:
         self.pallete_bytes = data
 
     def IDAT(self, data):
-        if not hasattr(self, 'indices_bytes'):
-            self.indices_bytes = ''
-        # self.indices_bytes = zlib.decompress(data)
-        # self.indices_bytes = data.decode('zlib')
-        d = zlib.decompressobj()
-        self.indices_bytes = d.decompress(data)
-        
+        if not hasattr(self, '__idat'):
+            self.__idat = ''
+        self.__idat = data.decode('zlib')
 
     def IEND(self, data):
         pass
@@ -58,9 +53,10 @@ class PNG:
         # using pallete
         if self.color_type == 3:
             result = ''
-            for byte in self.indices_bytes:
-                i = ord(byte) * 3
-                result += '\x00' + self.pallete_bytes[i:i+3]
+            for i, byte in enumerate(self.__idat):
+                if i != 0 and (i % self.width != 0):
+                    index = ord(byte) * 3
+                    result += '\x00' + self.pallete_bytes[index:index+3]
             return result
         else:
             raise NotImplementedError
