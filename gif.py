@@ -102,7 +102,9 @@ class LZWBitStream:
 class ImageBlock:
     SEPARATER = 0x2c
 
-    def __init__(self, io, gif):
+    def __init__(self, io, gif, graphic_control):
+        self.graphic_control = graphic_control
+
         self.left_pos, self.top_pos, self.width, self.height, self.flags = \
           struct.unpack('<HHHHB', io.read(9))
 
@@ -130,6 +132,9 @@ class ImageBlock:
 
     def with_pallete(self):
         return True
+
+    def with_transparent(self):
+        return self.graphic_control.transparent_flag
 
     def build_pallete(self):
         return self.pallete_bytes
@@ -187,6 +192,10 @@ class GraphicControlExtension:
 
         if end != EXTENSION_END:
             raise GIFParseError
+
+    @property
+    def transparent_flag(self):
+        return bool(self.flags & 1)
 
 class CommentExtension:
     LABEL = 0xfe
@@ -267,6 +276,7 @@ class GIF:
 
         self.blocks = []
         self.images = []
+        graphic_control = None
         while True:
             next_byte = io.read(1)
             if not next_byte:
@@ -276,12 +286,16 @@ class GIF:
                 return
 
             elif next_byte == ImageBlock.SEPARATER:
-                image_block = ImageBlock(io, self)
+                image_block = ImageBlock(io, self, graphic_control)
                 self.blocks.append(image_block)
                 self.images.append(image_block)
+                graphic_control = None
 
             elif next_byte == EXTENSION_INTRODUCER:
-                self.blocks.append(Extension(io))
+                extension = Extension(io)
+                if isinstance(extension, GraphicControlExtension):
+                    graphic_control = extension
+                self.blocks.append(extension)
                 
     @property
     def pallete_flag(self):
