@@ -178,21 +178,43 @@ class GraphicControlExtension:
     LABEL = 0xf9
 
     def __init__(self, io):
-        self.block_size = ord(io.read(1))
+        self.block_size, \
+        self.flags, self.delay_time, self.transparent_color_index, end = \
+          struct.unpack('<BBHBB', io.read(6))
+
         if self.block_size != 0x04:
             raise GIFParseError
-
-        self.flags, self.delay_time, self.transparent_color_index, end = \
-          struct.unpack('<BHBB', io.read(5))
 
         if end != EXTENSION_END:
             raise GIFParseError
 
-# class CommentExtension:
-#     LABEL = 0xfe
+class CommentExtension:
+    LABEL = 0xfe
 
-#     def __init__(self, io):
-#         pass
+    def __init__(self, io):
+        self.data = DATA(io)
+        end = ord(io.read(1))
+        if end != EXTENSION_END:
+            raise GIFParseError
+
+class PlainTextExtension:
+    LABEL = 0x01
+
+    def __init__(self, io):
+        self.block_size, \
+        self.gird_left_pos, self.grid_top_pos, \
+        self.grid_width, self.grid_height, \
+        self.char_cell_width, self.char_cell_height, \
+        self.fg_color_index, self.bg_color_index = \
+          struct.unpack('<BHHHHBBBB', io.read(13))
+        
+        if self.block_size != 0x0c:
+            raise GIFParseError
+
+        self.data = DATA(io)
+        end = ord(io.read(1))
+        if end != EXTENSION_END:
+            raise GIFParseError
 
 class ApplicationExtension:
     LABEL = 0xff
@@ -211,7 +233,12 @@ class UnknownExtension:
         while byte != EXTENSION_END:
             byte = ord(io.read(1))
 
-extension_types = [GraphicControlExtension, ApplicationExtension]
+extension_types = [
+    GraphicControlExtension,
+    CommentExtension,
+    PlainTextExtension,
+    ApplicationExtension,
+    ]
 extension_types_for_label = dict((extension_type.LABEL, extension_type)
                                  for extension_type in extension_types)
 
