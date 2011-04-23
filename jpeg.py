@@ -70,7 +70,7 @@ chunk_layouts = {
 def chunk_to_bytes(chunk):
     result = struct.pack('BB', MARKER1, chunk['marker'])
     if 'length' in chunk:
-        result += be2bytes(chunk['length'], 2)
+        result += struct.pack('>H', chunk['length'])
     if 'data' in chunk:
         result += chunk['data']
     return result

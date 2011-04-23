@@ -14,13 +14,11 @@ png_path  = os.path.join(fixtures_dir, 'gogopher.png')
 # gif_path  = os.path.expanduser('~/tmp/unko.gif')
 # sys.path.append(os.path.expanduser('~/dev/naraku'))
 
-from ppswf import SWF
-from ppswf.gif import GIF
-from ppswf.png import PNG
+import ppswf
 from ppswf import swftag
 
 def main():
-    swf = SWF(open(swf_path).read())
+    swf = ppswf.SWF(open(swf_path).read())
 
     # bg_tag = swf.find_tag(swftag.SetBackgroundColor)
     # bg_tag.rgb = (255,0,0)
@@ -34,8 +32,9 @@ def main():
 
     # swf.images[1] = jpeg_tag
 
-    # swf.images[1] = GIF(open(gif_path))
-    swf.images[1] = PNG(open(png_path))
+    # swf.images[1] = ppswf.JPEG(open(jpeg_path))
+    # swf.images[1] = ppswf.GIF(open(gif_path))
+    swf.images[1] = ppswf.PNG(open(png_path))
 
     out_dir = os.path.expanduser('~/tmp')
     open(os.path.join(out_dir, 'orz2.swf'), 'w').write(swf.build())

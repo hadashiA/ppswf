@@ -141,33 +141,32 @@ class DefineBitsLossless(SWFTagImage):
         def fget(self):
             return self.__image
 
-        def fset(self, value):
-            if isinstance(value, GIF):
-                self.__image = value
-                image_block = value.images[0]
+        def fset(self, image):
+            if isinstance(image, GIF):
+                image = image.images[0]
+
+            if image.with_pallete():
+                self.__image = image
+
                 self._body_bytes = struct.pack('<HBHHB',
                                                self.cid or 0,
                                                3,
-                                               image_block.width,
-                                               image_block.height,
-                                               image_block.pallete_size - 1,
+                                               image.width,
+                                               image.height,
+                                               image.pallete_size - 1,
                                                )
                 self._body_bytes += zlib.compress(
-                    image_block.pallete_bytes + \
-                    adjust_indices_bytes(image_block.indices_bytes,
-                                         image_block.width))
-            elif isinstance(value, PNG):
-                self.__image = value
+                    image.pallete_bytes + \
+                    adjust_indices_bytes(image.build_indices(),
+                                         image.width))
+            else:
                 self._body_bytes = struct.pack('<HBHH',
                                                self.cid or 0,
                                                5,
-                                               value.width,
-                                               value.height,
+                                               image.width,
+                                               image.height,
                                                )
-                self._body_bytes += zlib.compress(value.build_argb())
-
-            else:
-                raise ValueError
+                self._body_bytes += zlib.compress(image.build_xrgb())
 
         return locals()
 

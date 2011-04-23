@@ -128,9 +128,14 @@ class ImageBlock:
     def sort_flag(self):
         return bool((self.flags >> 5) & 1)
 
+    def with_pallete(self):
+        return True
+
+    def build_pallete(self):
+        return self.pallete_bytes
+
     # GIF LZW decode
-    @property
-    def indices_bytes(self):
+    def build_indices(self):
         result = ''
 
         code_size = self.lzw_min_code_size + 1
@@ -226,6 +231,9 @@ class GIF:
         self.flags, \
         self.bgcolor_index, self.aspect_ratio = \
           struct.unpack('<3s3sHHBBB', io.read(13))
+
+        if self.signature != 'GIF':
+            raise GIFParseError, 'Not GIF'
 
         if self.pallete_flag:
             self.pallete_bytes = io.read(self.pallete_size * 3)
