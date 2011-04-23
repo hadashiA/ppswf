@@ -50,7 +50,7 @@ class SWFImages:
     def __getitem__(self, cid):
         return self.__tags_for_cid()[cid]
 
-    def __setitem__(self, cid, new_tag):
+    def __setitem__(self, cid, value):
         self.__tags_for_cid_cache = None
         index = None
         for i, tag in enumerate(self.owner.tags):
@@ -61,16 +61,15 @@ class SWFImages:
         if index is None:
             raise KeyError
 
-        if issubclass(new_tag.__class__, swftag.SWFTagBase):
-            pass
-        elif isinstance(new_tag, GIF):
-            new_tag = swftag.DefineBitsLossless(new_tag, cid=cid)
-        elif isinstance(new_tag, PNG):
-            new_tag = swftag.DefineBitsLossless(new_tag, cid=cid)
-        elif isinstance(new_tag, JPEG):
-            new_tag = swftag.DefineBitsJPEG2(new_tag, cid=cid)
+        if issubclass(value.__class__, swftag.SWFTagBase):
+            new_tag = value
+        elif isinstance(value, JPEG):
+            new_tag = swftag.DefineBitsJPEG2(value, cid=cid)
+        elif value.with_transparent():
+            # new_tag = swftag.DefineBitsLossless2(value, cid=cid)
+            raise NotImplementedError
         else:
-            raise ValueError
+            new_tag = swftag.DefineBitsLossless(value, cid=cid)
 
         self.owner.tags[index] = new_tag
 

@@ -12,6 +12,8 @@ class PNG:
     __filterd_idat = ''
     __idat = None
 
+    alpha_bytes = None
+
     def __init__(self, io):
         if isinstance(io, str):
             io = StringIO(io)
@@ -49,7 +51,7 @@ class PNG:
         pass
 
     def tRNS(self, data, length):
-        self.alpha_pallete_bytes = data
+        self.alpha_bytes = data
             
     @property
     def idat(self):
@@ -69,6 +71,9 @@ class PNG:
 
     def with_pallete(self):
         return self.color_type == 3
+
+    def with_transparent(self):
+        return self.alpha_bytes or self.color_type in (4, 6)
 
     def build_pallete(self):
         if self.with_pallete():
