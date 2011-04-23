@@ -9,6 +9,9 @@ class PNGParseError:
 class PNG:
     SIGNATURE = '\x89PNG\r\n\x1a\n'
 
+    __filterd_idat = ''
+    __idat = None
+
     def __init__(self, io):
         if isinstance(io, str):
             io = StringIO(io)
@@ -18,13 +21,13 @@ class PNG:
             raise PNGParseError
 
         chunk_name = None
-        while chunk_name != 'IEND':
+        while chunk_name not in ('IEND', ''):
             chunk_header = io.read(8)
             chunk_length, chunk_name = struct.unpack('>L4s', chunk_header)
             chunk_data = io.read(chunk_length)
             chunk = getattr(self, chunk_name, self.UNKNOWN)
             chunk(chunk_data)
-            crc = io.read(4)
+            crc = io.read(4)            # skip verify
 
     def UNKNOWN(self, data):
         pass
@@ -39,9 +42,7 @@ class PNG:
         self.pallete_bytes = data
 
     def IDAT(self, data):
-        if not hasattr(self, '__idat'):
-            self.__idat = ''
-        self.__idat = data.decode('zlib')
+        self.__filterd_idat += data.decode('zlib')
 
     def IEND(self, data):
         pass
@@ -49,14 +50,28 @@ class PNG:
     def tRNS(self, data):
         self.alpha_pallete_bytes = data
             
-    def build_xrgb(self):
+    @property
+    def idat(self):
+        if self.__idat is None:
+            self.__idat = ''
+            io = StringIO(self.__filterd_idat)
+            first_column = io.read(1)
+            while first_column:
+                filter_type = ord(first_column)
+                if filter_type == 0:
+                    self.__idat += io.read(self.width)
+
+                first_column = io.read(1)
+
+        return self.__idat
+
+    def build_argb(self):
         # using pallete
         if self.color_type == 3:
             result = ''
-            for i, byte in enumerate(self.__idat):
-                if i != 0 and (i % self.width != 0):
-                    index = ord(byte) * 3
-                    result += '\x00' + self.pallete_bytes[index:index+3]
+            for byte in self.idat:
+                index = ord(byte) * 3
+                result += '\x00' + self.pallete_bytes[index:index+3]
             return result
         else:
             raise NotImplementedError

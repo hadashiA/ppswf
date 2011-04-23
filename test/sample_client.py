@@ -35,8 +35,7 @@ def main():
     # swf.images[1] = jpeg_tag
 
     # swf.images[1] = GIF(open(gif_path))
-    png = PNG(open(png_path))
-    swf.images[1] = swftag.DefineBitsLossless(png)
+    swf.images[1] = PNG(open(png_path))
 
     out_dir = os.path.expanduser('~/tmp')
     open(os.path.join(out_dir, 'orz2.swf'), 'w').write(swf.build())

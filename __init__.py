@@ -8,6 +8,8 @@ from bitstring import BitString
 import swftag
 from swftag import SWFTag
 from gif import GIF
+from png import PNG
+from jpeg import JPEG
 
 class SWFParseError(Exception):
     """Raised when fairue swf binary parse"""
@@ -62,6 +64,8 @@ class SWFImages:
         if issubclass(new_tag.__class__, swftag.SWFTagBase):
             pass
         elif isinstance(new_tag, GIF):
+            new_tag = swftag.DefineBitsLossless(new_tag, cid=cid)
+        elif isinstance(new_tag, PNG):
             new_tag = swftag.DefineBitsLossless(new_tag, cid=cid)
         elif isinstance(new_tag, JPEG):
             new_tag = swftag.DefineBitsJPEG2(new_tag, cid=cid)

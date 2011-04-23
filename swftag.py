@@ -164,7 +164,7 @@ class DefineBitsLossless(SWFTagImage):
                                                value.width,
                                                value.height,
                                                )
-                self._body_bytes += zlib.compress(value.build_xrgb())
+                self._body_bytes += zlib.compress(value.build_argb())
 
             else:
                 raise ValueError
