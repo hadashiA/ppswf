@@ -4,25 +4,23 @@ from array import array
 def AttrAccessor(function):
     return property(**function())
 
-def rgb(rgb_bytes, size=None):
-    if size is None:
-        size = len(rgb_bytes)
+def in_groups_of(n, values):
+    length = len(values)
+    if isinstance(values, str):
+        numbers = array('B')
+        numbers.fromstring(values)
     else:
-        size *= 3
-
-    numbers = array('B')
-    numbers.fromstring(rgb_bytes)
+        numbers = values
+    
     return tuple(
-        numbers[i:i + 3] for i in range(0, size - 1, 3)
+        tuple(numbers[i:i+n]) for i in range(0, length - 1, n)
         )
+        
+def rgb(rgb_bytes):
+    return in_groups_of(3, rgb_bytes)
 
 def rgba(rgba_bytes):
-    size = len(rgba_bytes)
-    numbers = array('B')
-    numbers.fromstring(rgba_bytes)
-    return tuple(
-        numbers[i:i+4] for i in range(0, size - 1, 4)
-        )
+    return in_groups_of(4, rgba_bytes)
 
 def indices(bytes):
     a = array('B')

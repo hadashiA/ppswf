@@ -45,7 +45,7 @@ class GIFParseTestCase(unittest.TestCase):
 
     def testParseColorPallete(self):
         image_block = self.gif.images[0]
-        assert rgb(image_block.pallete_bytes, image_block.pallete_size) == (
+        assert rgb(image_block.pallete_bytes) == (
             ( 43, 80,121),
             ( 68, 68, 68),
             ( 75, 75, 75),
@@ -318,6 +318,7 @@ class GIFOneColorParseTestCase(unittest.TestCase):
         image_block = self.gif.images[0]
         assert image_block.width == 40
         assert image_block.height == 40
+        print rgb(image_block.pallete_bytes)
         assert rgb(image_block.pallete_bytes) == (
             (255, 0, 0),
             (0, 0, 0)
