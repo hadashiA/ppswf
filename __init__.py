@@ -5,6 +5,7 @@ from cStringIO import StringIO
 from bitstring import BitString
 
 import utils
+from inner_structures import StructRect
 import swftag
 from swftag import SWFTag
 from gif import GIF
