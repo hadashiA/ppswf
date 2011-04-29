@@ -1,8 +1,6 @@
 import math
 from cStringIO import StringIO
 
-# from bitstring import BitString
-
 from swftag import DefineShape2, DefineShape3
 
 class StructRect:
@@ -27,40 +25,37 @@ class StructRect:
     def build(self):
         return self.bits.bytes
 
-
-# SWF Shape inner structures
-
 class Matrix:
-    def __init__(self, bytes):
-        io = StringIO(bytes)
-        has_scale = io.read(1)
+    def __init__(self, bits):
+        bits.bytealign()
+        start_pos = bits.tellbyte()
 
-class FillStyles:
-    def __init__(self, swftag_code, bytes):
-        io = StringIO(bytes)
+        self.has_scale = bool(bits.readbits(1).uint)
+        if has_scale:
+            scale_bits_length = bits.readbits(5).uint
+            self.scale_x = bits.readbits(scale_bits_length).uint
+            self.scale_y = bits.readbits(scale_bits_length).uint
+        else:
+            self.scale_x = 20
+            self.scale_y = 20
 
-        count = ord(io.read(1))
-        if count == 0xff and swftag_code > DefineShape2.CODE:
-            count, = struct.unpack('<H', io.read(2))
+        self.has_rotate = bool(bits.readbits(1).uint)
+        self.rotate_skew = []
+        if self.has_rotate:
+            rotate_bits_length = bits.readbits(5).uint
+            self.rotate_skew[0] = bits.readbits(rotate_bits_length).uint
+            self.rotate_skew[1] = bits.readbits(rotate_bits_length).uint
+        else:
+            self.rotate_skew[0] = 0
+            self.rotate_skew[1] = 0
 
-        self.__content = []
-        for i in range(count):
-            fill_style = {}
-            fill_style_type = ord(io.read(1))
-            fill_style['type'] = fill_style_type
-            if fill_style == 0x00:
-                if swftag_code < DefineShape3.CODE:
-                    fill_style['color'] = io.read(3)
-                else:
-                    fill_style['color'] = io.read(4)
-            if fill_style in (0x10, 0x12):
-                fill_style['gradient_matrix'] = None
+        translate_bits_length = bits.readbits(5).uint
+        self.translate_x = bits.readbits(translate_bits_length).uint
+        self.translate_y = bits.readbits(translate_bits_length).uint
 
-        self.__bytes_length = io.tell()
+        bits.bytealign()
+        self.__bytes_length = bits.tellbyte() - start_pos
 
     def __len__(self):
         return self.__bytes_length
-
-    def __getitem__(self, i):
-        pass
 
