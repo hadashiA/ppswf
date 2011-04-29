@@ -1,6 +1,8 @@
 import struct
 import zlib
+from cStringIO import StringIO
 
+from types import StructRect, FillStyles
 from jpeg import JPEG, MARKER1, SOI, EOI
 from gif import GIF
 from png import PNG
@@ -97,8 +99,15 @@ class ShowFrame(SWFTagBase):
 class DefineShape(SWFTagContent):
     CODE = 2
 
-    __bounds = None
+    __bits        = None
+    __bounds      = None
     __fill_styles = None
+
+    @property
+    def bits(self):
+        if self.__bits is None:
+            self.__bits = BitString(bytes=self._body_bytes)
+        return self.__bits
 
     @property
     def bounds(self):
@@ -106,26 +115,13 @@ class DefineShape(SWFTagContent):
             self.__bounds = StructRect(self._body_bytes[self.CID_LENGTH:])
         return self.__bounds
 
-    # @property
-    # def fill_styles(self):
-    #     if self.__fill_styles is None:
-    #         pos = self.CID_LENGTH + len(self.bounds)
-    #         fill_count = ord(self._body_bytes[pos])
-    #         pos += 1
-    #         for i in range(fill_count):
-    #             fill_type = ord(self._body_bytes[pos])
-    #             pos += 1
-    #             fill = {'type': fill_type}
-    #             if fill_type == 0:
-    #                 fill[color] = self._body_bytes[pos]
-    #                 pos += 1
-    #             elif fill_type in (0x10, 0x12, 0x13):
-    #                 pass
-    #             elif fill_type in (0x40, 0x42, 0x43):
-    #                 pass
+    @property
+    def fill_styles(self):
+        if self.__fill_styles is None:
+            start_pos = self.CID_LENGTH + len(self.bounds)
+            self.__fill_styles = FillStyles(self.bits[start_pos * 8:])
 
-    #     return self.__fill_styles
-            
+        return self.__fill_styles
 
 class DefineBits(SWFTagBase):
     CODE = 6
