@@ -72,7 +72,7 @@ class SWF:
 
         self.signature, self.version, self.filesize = struct.unpack('<3sBL',
                                                                     io.read(8))
-        self.frame_size  = utils.StructRect(io)
+        self.frame_size  = StructRect(io)
         self.frame_rate, self.frame_count = struct.unpack('<HH', io.read(4))
         self.frame_rate /= 0x100
 

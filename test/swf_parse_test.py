@@ -8,7 +8,7 @@ import sys
 #         os.path.realpath(os.path.join(current_dir, '..'))
 #         )
 
-from utils import StructRect
+from inner_structures import StructRect
 from ppswf import SWF, SWFImages, swftag
 from bitstring import BitString
 
