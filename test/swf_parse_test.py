@@ -8,7 +8,8 @@ import sys
 #         os.path.realpath(os.path.join(current_dir, '..'))
 #         )
 
-from ppswf import SWF, StructRect, SWFImages, swftag
+from utils import StructRect
+from ppswf import SWF, SWFImages, swftag
 from bitstring import BitString
 
 fixtures_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures')

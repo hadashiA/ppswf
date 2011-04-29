@@ -5,10 +5,13 @@ from jpeg import JPEG, MARKER1, SOI, EOI
 from gif import GIF
 from png import PNG
 
-from utils import AttrAccessor, adjust_indices_bytes
+from utils import AttrAccessor, adjust_indices_bytes, StructRect
 
 class SWFTagBuildError(Exception):
     """Raised when fairue swf tag build"""
+
+class SWFTagParseError(Exception):
+   """Raised when fairue swf tag parse"""
 
 class SWFTagBase(object):
     __header_bytes      = None
@@ -57,14 +60,16 @@ class SWFTagBase(object):
     def build(self):
         return self.build_header() + self._body_bytes
 
-class SWFTagImage(SWFTagBase):
+class SWFTagContent(SWFTagBase):
+    CID_LENGTH = 2
+
     __cid = None
 
     @AttrAccessor
     def cid():
         def fget(self):
             if self.__cid is None and self._body_bytes is not None:
-                self.__cid, = struct.unpack('<H', self._body_bytes[:2])
+                self.__cid, = struct.unpack('<H', self._body_bytes[:self.CID_LENGTH])
             return self.__cid
 
         def fset(self, cid):
@@ -73,9 +78,12 @@ class SWFTagImage(SWFTagBase):
             if self._body_bytes is None:
                 self._body_bytes = packed_cid
             else:
-                self._body_bytes = packed_cid + self._body_bytes[2:]
+                self._body_bytes = packed_cid + self._body_bytes[self.CID_LENGTH:]
 
         return locals()
+
+class SWFTagImage(SWFTagContent):
+    pass
 
 class Unknown(SWFTagBase):
     pass
@@ -86,8 +94,38 @@ class End(SWFTagBase):
 class ShowFrame(SWFTagBase):
     CODE = 1
 
-class DefineShape(SWFTagBase):
+class DefineShape(SWFTagContent):
     CODE = 2
+
+    __bounds = None
+    __fill_styles = None
+
+    @property
+    def bounds(self):
+        if self.__bounds is None:
+            self.__bounds = StructRect(self._body_bytes[self.CID_LENGTH:])
+        return self.__bounds
+
+    # @property
+    # def fill_styles(self):
+    #     if self.__fill_styles is None:
+    #         pos = self.CID_LENGTH + len(self.bounds)
+    #         fill_count = ord(self._body_bytes[pos])
+    #         pos += 1
+    #         for i in range(fill_count):
+    #             fill_type = ord(self._body_bytes[pos])
+    #             pos += 1
+    #             fill = {'type': fill_type}
+    #             if fill_type == 0:
+    #                 fill[color] = self._body_bytes[pos]
+    #                 pos += 1
+    #             elif fill_type in (0x10, 0x12, 0x13):
+    #                 pass
+    #             elif fill_type in (0x40, 0x42, 0x43):
+    #                 pass
+
+    #     return self.__fill_styles
+            
 
 class DefineBits(SWFTagBase):
     CODE = 6
