@@ -2,9 +2,10 @@ import struct
 import zlib
 from cStringIO import StringIO
 
-from inner_structures import StructRect, FillStyles
-
-from jpeg import JPEG, MARKER1, SOI, EOI
+from inner_structures import StructRect
+import shape
+import jpeg
+from jpeg import JPEG
 from gif import GIF
 from png import PNG
 
@@ -103,9 +104,10 @@ class DefineShape(SWFTagContent):
     __bits        = None
     __bounds      = None
     __fill_styles = None
+    __line_styles = None
 
     @property
-    def bits(self):
+    def body_bits(self):
         if self.__bits is None:
             self.__bits = BitString(bytes=self._body_bytes)
         return self.__bits
@@ -113,16 +115,28 @@ class DefineShape(SWFTagContent):
     @property
     def bounds(self):
         if self.__bounds is None:
-            self.__bounds = StructRect(self._body_bytes[self.CID_LENGTH:])
+            self.body_bits.seekbyte(2)
+            self.__bounds = StructRect(bits=self.body_bits)
         return self.__bounds
 
     @property
     def fill_styles(self):
         if self.__fill_styles is None:
-            start_pos = self.CID_LENGTH + len(self.bounds)
-            self.__fill_styles = FillStyles(self.bits[start_pos * 8:])
-
+            self.body_bits.seekbyte(self.CID_LENGTH + \
+                                    len(self.bounds)
+                                    )
+            self.__fill_styles = shape.FillStyles(self.body_bits, self.__class__)
         return self.__fill_styles
+    
+    @property
+    def line_styles(self):
+        if self.__line_styles is None:
+            self.body_bits.seekbyte(self.CID_LENGTH + \
+                                    len(self.bounds) + \
+                                    len(self.fill_styles)
+                                    )
+            self.__line_styles = shape.LineStyles(self.body_bits, self.__class__)
+        return self.__line_styles
 
 class DefineBits(SWFTagBase):
     CODE = 6
@@ -208,6 +222,8 @@ class DefineBitsLossless(SWFTagImage):
 class DefineBitsJPEG2(SWFTagImage):
     CODE = 21
 
+    __image = None
+
     def __init__(self, jpeg=None, cid=None, **kwargs):
         if jpeg is not None:
             self.cid = cid
@@ -218,19 +234,18 @@ class DefineBitsJPEG2(SWFTagImage):
     @AttrAccessor
     def image():
         def fget(self):
-            return self._body_bytes
+            return self.__image
 
-        def fset(self, jpeg):
-            if isinstance(jpeg, JPEG):
-                jpeg = jpeg.build()
+        def fset(self, image):
             self._body_bytes = struct.pack('<HBBBB',
                                            self.cid or 0,
-                                           MARKER1, SOI, MARKER1, EOI
-                                           ) + jpeg
+                                           jpeg.MARKER1, jpeg.SOI,
+                                           jpeg.MARKER1, jpeg.EOI
+                                           ) + image.build()
 
         return locals()
 
-class DefineShape2(SWFTagBase):
+class DefineShape2(DefineShape):
     CODE = 22
 
 class PlaceObject2(SWFTagBase):
@@ -239,7 +254,7 @@ class PlaceObject2(SWFTagBase):
 class RemoveObject2(SWFTagBase):
     CODE = 28
 
-class DefineShape3(SWFTagBase):
+class DefineShape3(DefineShape):
     CODE = 32
 
 class DefineButton2(SWFTagBase):
@@ -263,11 +278,14 @@ class FrameLabel(SWFTagBase):
 class SoundStreamHead2(SWFTagBase):
     CODE = 45
 
-class DefineMorphShape(SWFTagBase):
+class DefineMorphShape(DefineShape):
     CODE = 46
 
 class DefineFont2(SWFTagBase):
     CODE = 48
+
+class DefineShape4(DefineShape):
+    CODE = 84
 
 class DefineFontName(SWFTagBase):
     CODE = 88
@@ -297,6 +315,7 @@ tag_types = [
     SoundStreamHead2,
     DefineMorphShape,
     DefineFont2,
+    DefineShape4,
     DefineFontName,
     ]
 
